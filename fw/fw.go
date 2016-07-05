@@ -3,18 +3,29 @@ package fw
 import (
 	"log"
 
+	"github.com/floriangrundig/scofw/config"
 	"github.com/floriangrundig/scofw/reporter"
 	"github.com/fsnotify/fsnotify"
 )
 
-func RunFileWatcher(path string) {
+type FileWatcher struct {
+	config *config.Config
+}
+
+func New(config *config.Config) *FileWatcher {
+	return &FileWatcher{
+		config: config,
+	}
+}
+
+func (fw *FileWatcher) Start() {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Println("Error while creating file watcher")
 		log.Fatal(err)
 	}
 
-	log.Println("Watching directory (no subdirectories): " + path)
+	log.Println("Watching directory (no subdirectories): " + fw.config.BaseDir)
 
 	defer watcher.Close()
 
@@ -69,7 +80,7 @@ func RunFileWatcher(path string) {
 		}
 	}()
 
-	err = watcher.Add(path)
+	err = watcher.Add(fw.config.BaseDir)
 	if err != nil {
 		log.Fatal(err)
 	}

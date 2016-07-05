@@ -12,6 +12,10 @@ import (
 
 var ()
 
+type ScoFw struct {
+	config *config.Config
+}
+
 // to statically link lib: www.petethompson.net/blog/golang/2015/10/04/getting-going-with-git2go/
 
 func main() {
@@ -42,5 +46,7 @@ func main() {
 		// to the current watched dir and its subdirectories
 	}
 
-	fw.RunFileWatcher(config.BaseDir)
+	var fw = fw.New(config)
+
+	fw.Start()
 }
