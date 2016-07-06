@@ -1,20 +1,42 @@
 package fw
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/floriangrundig/scofw/config"
-	"github.com/floriangrundig/scofw/reporter"
 	"github.com/fsnotify/fsnotify"
 )
 
-type FileWatcher struct {
-	config *config.Config
+// The types Event and Op and the Op-constants were copied from the fsnotify.go -> we wrap them here
+
+// FileEvent represents a single file system notification.
+type FileEvent struct {
+	Name string // Relative path to the file or directory.
+	Op   Op     // File operation that triggered the event.
 }
 
-func New(config *config.Config) *FileWatcher {
+// Op describes a set of file operations.
+type Op uint32
+
+// These are the generalized file operations that can trigger a notification.
+const (
+	Create Op = 1 << iota
+	Write
+	Remove
+	Rename
+	Chmod
+)
+
+type FileWatcher struct {
+	config    *config.Config
+	eventSink chan *FileEvent
+}
+
+func New(config *config.Config, eventSink chan *FileEvent) *FileWatcher {
 	return &FileWatcher{
-		config: config,
+		config:    config,
+		eventSink: eventSink,
 	}
 }
 
@@ -25,7 +47,7 @@ func (fw *FileWatcher) Start() {
 		log.Fatal(err)
 	}
 
-	log.Println("Watching directory (no subdirectories): " + fw.config.BaseDir)
+	log.Println("Watching directory: " + fw.config.BaseDir)
 
 	defer watcher.Close()
 
@@ -34,24 +56,6 @@ func (fw *FileWatcher) Start() {
 		for {
 			select {
 			case event := <-watcher.Events:
-				// log.Println("file watcher fired event:", event)
-				op := ""
-				if event.Op&fsnotify.Chmod == fsnotify.Chmod {
-					op += "Chmod "
-				}
-				if event.Op&fsnotify.Create == fsnotify.Create {
-					op += "Create "
-				}
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					op += "Write "
-				}
-				if event.Op&fsnotify.Remove == fsnotify.Remove {
-					op += "Remove "
-				}
-				if event.Op&fsnotify.Rename == fsnotify.Rename {
-					op += "Rename "
-				}
-
 				/*
 				 * TODO
 				 * We'll have a .sco subdirectory with current git hash as subfolder
@@ -73,7 +77,8 @@ func (fw *FileWatcher) Start() {
 				 * However we have to make sure that we don't copy a file to as file.tmp
 				 * if there's still such file - then we have to retry later ...
 				 */
-				gitReporter.FileModified(event.Name, op)
+
+				fw.eventSink <- convertFsNotifyEvent(event)
 			case err := <-watcher.Errors:
 				log.Println("error:", err)
 			}
@@ -85,4 +90,34 @@ func (fw *FileWatcher) Start() {
 		log.Fatal(err)
 	}
 	<-done
+}
+
+func convertFsNotifyEvent(event fsnotify.Event) *FileEvent {
+
+	var op Op
+
+	if event.Op&fsnotify.Chmod == fsnotify.Chmod {
+		op |= Chmod
+	}
+	if event.Op&fsnotify.Create == fsnotify.Create {
+		op |= Create
+	}
+	if event.Op&fsnotify.Write == fsnotify.Write {
+		op |= Write
+	}
+	if event.Op&fsnotify.Remove == fsnotify.Remove {
+		op |= Remove
+	}
+	if event.Op&fsnotify.Rename == fsnotify.Rename {
+		op |= Rename
+	}
+
+	if uint32(op) != uint32(event.Op) {
+		fmt.Println("ARRRRRRRRRRRRG SOMETHING IS WRONG WITH THE EVENT OP CONVERSION")
+	}
+
+	return &FileEvent{
+		Name: event.Name,
+		Op:   op,
+	}
 }

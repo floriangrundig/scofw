@@ -1,52 +1,36 @@
 package main
 
 import (
-	"log"
-	"os"
-
 	"github.com/floriangrundig/scofw/config"
 	"github.com/floriangrundig/scofw/fw"
+	"github.com/floriangrundig/scofw/git"
 	"github.com/floriangrundig/scofw/reporter"
-	"github.com/libgit2/git2go"
+	"github.com/floriangrundig/scofw/util"
 )
-
-var ()
-
-type ScoFw struct {
-	config *config.Config
-}
 
 // to statically link lib: www.petethompson.net/blog/golang/2015/10/04/getting-going-with-git2go/
 
 func main() {
 
-	var config = config.New()
+	// stores global configuration
+	config := config.New()
 
-	log.Println("Checking path:", config.BaseDir)
+	// utility module for creating sco related files/directories
+	util := util.New(config)
 
-	// the default fw-engine uses git
-	// there might be some other engines which don't need git
-	// in the latter case we should make the engine configurable via cli params
-	repo, err := git.OpenRepository(config.BaseDir)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// observes current working tree
+	wktreeObserver := wktreeobserver.New(config, util)
 
-	log.Println("...OK (git repository)")
-	gitReporter.SetRepo(repo)
+	// Channel from filewatcher to reporter
+	fileEventChannel := make(chan *fw.FileEvent)
 
-	if _, err := os.Stat(".sco"); os.IsNotExist(err) {
-		err = os.Mkdir(".sco", 0777)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Println("Created .sco folder which is used by sco filewatcher...")
-		log.Println("Please add the .sco folder to your git ignore")
-		// TODO create folders "a" and "b" with and subfolders corresponding
-		// to the current watched dir and its subdirectories
-	}
+	// file watcher -> reports file event changes into fileEventChannel
+	fw := fw.New(config, fileEventChannel)
 
-	var fw = fw.New(config)
+	// listen on fileEventChannel -> determines the diff and updates the current sco-wktree patch
+	gitReporter := gitReporter.New(config, fileEventChannel)
 
+	go wktreeObserver.Start()
+	go gitReporter.Start()
 	fw.Start()
 }

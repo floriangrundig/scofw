@@ -1,110 +1,141 @@
 package gitReporter
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
+	"github.com/floriangrundig/scofw/config"
+	"github.com/floriangrundig/scofw/fw"
 	"github.com/libgit2/git2go"
 )
 
-var (
-	repo *git.Repository
-)
-
-func SetRepo(_repo *git.Repository) {
-	repo = _repo
+type GitReporter struct {
+	config           *config.Config
+	repo             *git.Repository
+	fileEventChannel chan *fw.FileEvent
 }
 
-func FileModified(name string, op string) {
+func New(config *config.Config, fileEventChannel chan *fw.FileEvent) *GitReporter {
 
-	if op != "Chmod " {
+	// the default fw-engine uses git
+	// there might be some other engines which don't need git
+	// in the latter case we should make the engine configurable via cli params
+	repo, err := git.OpenRepository(config.BaseDir)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		go func() {
+	return &GitReporter{
+		config:           config,
+		repo:             repo,
+		fileEventChannel: fileEventChannel,
+	}
+}
 
-			ref, err := repo.Head()
-			if err != nil {
-				log.Fatal(err)
-			}
+func (gr *GitReporter) Start() {
+	log.Println("Starting git reporter")
 
-			oidHead := ref.Target()
-			// log.Println("HEAD:", oidHead)
+	for {
+		// wait for incoming events
+		event, ok := <-gr.fileEventChannel
 
-			commit, err := repo.LookupCommit(oidHead)
-			if err != nil {
-				log.Fatal(err)
-			}
-			commitTree, err := commit.Tree()
-			if err != nil {
-				log.Fatal(err)
-			}
+		if !ok {
+			// channel is closed
+			fmt.Println("Shutting down git reporter")
+		}
 
-			options, err := git.DefaultDiffOptions()
-			if err != nil {
-				log.Fatal(err)
-			}
+		fmt.Println("Received events %s %d", event.Name, event.Op)
 
-			// Specifying full patch indices.
-			options.IdAbbrev = 40
-			options.Flags |= git.DiffIncludeUntracked
+		if event.Op != fw.Chmod {
 
-			gitDiff, err := repo.DiffTreeToWorkdir(commitTree, &options)
-			if err != nil {
-				log.Fatal(err)
-			}
+			go func() {
 
-			numDeltas, err := gitDiff.NumDeltas()
-			if err != nil {
-				log.Fatal(err)
-			}
-			for d := 0; d < numDeltas; d++ {
-
-				delta, err := gitDiff.GetDelta(d)
+				ref, err := gr.repo.Head()
 				if err != nil {
 					log.Fatal(err)
 				}
 
-				if strings.HasSuffix(name, delta.NewFile.Path) {
-					if delta.Status == git.DeltaUnmodified {
-						log.Println("Delta: unmodified")
-					}
-					if delta.Status == git.DeltaUntracked {
-						log.Println("Delta: untracked")
-					}
-					if delta.Status == git.DeltaAdded {
-						log.Println("Delta: added")
-					}
-					if delta.Status == git.DeltaDeleted {
-						log.Println("Delta: deleted")
-					}
-					if delta.Status == git.DeltaRenamed {
-						log.Println("Delta: renamed")
-					}
-					if delta.Status == git.DeltaModified {
-						log.Println("Delta: modified")
-					}
-					if delta.Status == git.DeltaCopied {
-						log.Println("Delta: copied")
-					}
-					if delta.Status == git.DeltaTypeChange {
-						log.Println("Delta: type changed")
-					}
+				oidHead := ref.Target()
+				// log.Println("HEAD:", oidHead)
 
-					patch, err := gitDiff.Patch(d)
-					if err != nil {
-						log.Fatal(err)
-					}
-					patchString, err := patch.String()
-					if err != nil {
-						log.Fatal(err)
-					}
-					log.Printf("\n%s", patchString)
-					patch.Free()
+				commit, err := gr.repo.LookupCommit(oidHead)
+				if err != nil {
+					log.Fatal(err)
+				}
+				commitTree, err := commit.Tree()
+				if err != nil {
+					log.Fatal(err)
 				}
 
-			}
+				options, err := git.DefaultDiffOptions()
+				if err != nil {
+					log.Fatal(err)
+				}
 
-			log.Printf("reporting modification [%s] of file: %s", op, name)
+				// Specifying full patch indices.
+				options.IdAbbrev = 40
+				options.Flags |= git.DiffIncludeUntracked
 
-		}()
+				gitDiff, err := gr.repo.DiffTreeToWorkdir(commitTree, &options)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				numDeltas, err := gitDiff.NumDeltas()
+				if err != nil {
+					log.Fatal(err)
+				}
+				for d := 0; d < numDeltas; d++ {
+
+					delta, err := gitDiff.GetDelta(d)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					if strings.HasSuffix(event.Name, delta.NewFile.Path) {
+						if delta.Status == git.DeltaUnmodified {
+							log.Println("Delta: unmodified")
+						}
+						if delta.Status == git.DeltaUntracked {
+							log.Println("Delta: untracked")
+						}
+						if delta.Status == git.DeltaAdded {
+							log.Println("Delta: added")
+						}
+						if delta.Status == git.DeltaDeleted {
+							log.Println("Delta: deleted")
+						}
+						if delta.Status == git.DeltaRenamed {
+							log.Println("Delta: renamed")
+						}
+						if delta.Status == git.DeltaModified {
+							log.Println("Delta: modified")
+						}
+						if delta.Status == git.DeltaCopied {
+							log.Println("Delta: copied")
+						}
+						if delta.Status == git.DeltaTypeChange {
+							log.Println("Delta: type changed")
+						}
+
+						patch, err := gitDiff.Patch(d)
+						if err != nil {
+							log.Fatal(err)
+						}
+						patchString, err := patch.String()
+						if err != nil {
+							log.Fatal(err)
+						}
+						log.Printf("\n%s", patchString)
+						patch.Free()
+					}
+
+				}
+
+				log.Printf("reporting modification [%s] of file: %s", event.Op, event.Name)
+
+			}()
+		}
 	}
 }
