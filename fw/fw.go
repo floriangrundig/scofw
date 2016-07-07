@@ -1,7 +1,6 @@
 package fw
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/floriangrundig/scofw/config"
@@ -113,7 +112,7 @@ func convertFsNotifyEvent(event fsnotify.Event) *FileEvent {
 	}
 
 	if uint32(op) != uint32(event.Op) {
-		fmt.Println("ARRRRRRRRRRRRG SOMETHING IS WRONG WITH THE EVENT OP CONVERSION")
+		log.Fatal("fsnotify events are not parsable")
 	}
 
 	return &FileEvent{

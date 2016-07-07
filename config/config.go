@@ -51,11 +51,26 @@ func New() *Config {
 
 	scoRuntimeData := loadScoConfigFileContent(config)
 
-	config.SetScoRuntimeData(scoRuntimeData)
+	config.setScoRuntimeData(scoRuntimeData)
 	return &config
 }
 
-func (config *Config) SetScoRuntimeData(rt ScoRuntimeData) {
+func (config *Config) Persist() {
+	file := filepath.Join(config.ScoDir, config.ScoConfigFile)
+
+	b, err := json.MarshalIndent(&config.ScoRuntimeData, "", "  ")
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+
+	err = ioutil.WriteFile(file, b, config.ScoDirPermissions)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+
+}
+
+func (config *Config) setScoRuntimeData(rt ScoRuntimeData) {
 	config.ScoRuntimeData = rt
 }
 
@@ -71,19 +86,20 @@ func loadScoConfigFileContent(config Config) ScoRuntimeData {
 	filePath := filepath.Join(config.ScoDir, config.ScoConfigFile)
 	file, err := os.Open(filePath)
 	if err != nil {
-		fmt.Println("error:", err)
+		log.Println("error:", err)
 	}
+
 	decoder := json.NewDecoder(file)
 	scoRuntimeData := ScoRuntimeData{}
 	err = decoder.Decode(&scoRuntimeData)
 	if err != nil {
-		fmt.Println("error:", err)
+		log.Println("error:", err)
 	}
-	fmt.Println(scoRuntimeData)
 	return scoRuntimeData
 }
 
 func initializeScoConfigfile(config Config) {
+	log.Printf("Creating %s\n", config.ScoConfigFile)
 	file := filepath.Join(config.ScoDir, config.ScoConfigFile)
 	scoRuntimeData := ScoRuntimeData{
 		GitCommits: make(map[string]string),
@@ -91,12 +107,12 @@ func initializeScoConfigfile(config Config) {
 
 	b, err := json.MarshalIndent(scoRuntimeData, "", "  ")
 	if err != nil {
-		fmt.Println("error:", err)
+		log.Println("error:", err)
 	}
 
 	err = ioutil.WriteFile(file, b, config.ScoDirPermissions)
 	if err != nil {
-		fmt.Println("error:", err)
+		log.Println("error:", err)
 	}
 
 }

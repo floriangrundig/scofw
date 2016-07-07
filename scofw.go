@@ -30,7 +30,11 @@ func main() {
 	// listen on fileEventChannel -> determines the diff and updates the current sco-wktree patch
 	gitReporter := gitReporter.New(config, fileEventChannel)
 
-	go wktreeObserver.Start()
-	go gitReporter.Start()
+	wktreeObserver.Start()
+
+	gitReporter.Start()
+
 	fw.Start()
+
+	// TODO do not rely on fw.Start() to block use channel ...
 }
