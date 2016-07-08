@@ -2,6 +2,8 @@ package fw
 
 import (
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/floriangrundig/scofw/config"
 	"github.com/fsnotify/fsnotify"
@@ -84,10 +86,32 @@ func (fw *FileWatcher) Start() {
 		}
 	}()
 
-	err = watcher.Add(fw.config.BaseDir)
-	if err != nil {
-		log.Fatal(err)
+	log.Println("Start walking", fw.config.BaseDir)
+
+	walkFunc := func(path string, info os.FileInfo, err error) error {
+
+		// log.Println("FileInfo", info)
+
+		if err == nil {
+			if info.IsDir() && !fw.config.GitIgnore.MatchesPath(path) {
+				log.Println("Watching", path)
+				err = watcher.Add(path)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		} else {
+			log.Println("Error while walking through the workspace", err)
+		}
+
+		return nil
 	}
+
+	walkErr := filepath.Walk(fw.config.BaseDir, walkFunc)
+	if walkErr != nil {
+		log.Fatal(walkErr)
+	}
+
 	<-done
 }
 
