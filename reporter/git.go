@@ -46,10 +46,9 @@ func (gr *GitReporter) Start() {
 				log.Println("Shutting down git reporter")
 			}
 
-			log.Printf("Received events %s %d\n", event.Name, event.Op)
+			log.Printf("Received event %s %d\n", event.Name, event.Op)
 
 			if event.Op != fw.Chmod {
-
 				go func() {
 
 					ref, err := gr.repo.Head()
