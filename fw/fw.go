@@ -77,20 +77,19 @@ func (fw *FileWatcher) Start() {
 				 *
 				 * However we have to make sure that we don't copy a file to as file.tmp
 				 * if there's still such file - then we have to retry later ...
+
 				 */
 
-				fw.eventSink <- convertFsNotifyEvent(event)
+				if !fw.config.GitIgnore.MatchesPath(event.Name) {
+					fw.eventSink <- convertFsNotifyEvent(event)
+				}
 			case err := <-watcher.Errors:
 				log.Println("error:", err)
 			}
 		}
 	}()
 
-	log.Println("Start walking", fw.config.BaseDir)
-
 	walkFunc := func(path string, info os.FileInfo, err error) error {
-
-		// log.Println("FileInfo", info)
 
 		if err == nil {
 			if info.IsDir() && !fw.config.GitIgnore.MatchesPath(path) {

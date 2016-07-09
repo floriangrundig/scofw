@@ -4,6 +4,7 @@ import (
 	"github.com/floriangrundig/scofw/config"
 	"github.com/floriangrundig/scofw/fw"
 	"github.com/floriangrundig/scofw/git"
+	gitconfig "github.com/floriangrundig/scofw/git/config"
 	"github.com/floriangrundig/scofw/reporter"
 	"github.com/floriangrundig/scofw/util"
 )
@@ -18,8 +19,11 @@ func main() {
 	// utility module for creating sco related files/directories
 	util := util.New(config)
 
+	// stores e.g. mapping between current git commit (HEAD) and sco-session
+	gitConfig := gitconfig.New(config)
+
 	// observes current working tree
-	wktreeObserver := wktreeobserver.New(config, util)
+	wktreeObserver := wktreeobserver.New(config, gitConfig)
 
 	// Channel from filewatcher to reporter
 	fileEventChannel := make(chan *fw.FileEvent)
@@ -28,7 +32,7 @@ func main() {
 	fw := fw.New(config, fileEventChannel)
 
 	// listen on fileEventChannel -> determines the diff and updates the current sco-wktree patch
-	gitReporter := gitReporter.New(config, fileEventChannel)
+	gitReporter := gitReporter.New(config, gitConfig, util, fileEventChannel)
 
 	wktreeObserver.Start()
 

@@ -13,7 +13,7 @@ type Config struct {
 	BaseDir           string
 	ScoDir            string
 	ScoConfigFile     string
-	GitIgnore         *gitignore.GitIgnore
+	GitIgnore         *gitignore.GitIgnore // TODO rename into something git agnostiv like FileIgnore
 	ScoDirPermissions os.FileMode
 }
 

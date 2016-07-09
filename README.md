@@ -1,5 +1,7 @@
 #SCO-Filewatcher client
 
+TODO 
+
 ## Development
 
 ### Run
@@ -10,6 +12,6 @@ Use `go run scofw.go --help` to list of flags...
 
 
 ### Add new vendor packages as dependency
-We use https://github.com/kardianos/govendor to store our dependencies within the project 
+We use https://github.com/kardianos/govendor to store our dependencies within the project
 
 Use e.g. `govendor fetch github.com/satori/go.uuid`.

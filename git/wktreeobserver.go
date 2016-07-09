@@ -6,7 +6,6 @@ import (
 
 	"github.com/floriangrundig/scofw/config"
 	gitconfig "github.com/floriangrundig/scofw/git/config"
-	"github.com/floriangrundig/scofw/util"
 	"github.com/libgit2/git2go"
 	"github.com/satori/go.uuid"
 )
@@ -19,19 +18,15 @@ type WorkTreeObserver struct {
 	scoConfig          *config.Config
 	config             *gitconfig.Config
 	gitRuntimeDataFile string
-	util               *util.Util
 	GitRuntimeData
 }
 
-func New(config *config.Config, util *util.Util) *WorkTreeObserver {
-
-	gitConfig := gitconfig.New(config, util)
+func New(config *config.Config, gitConfig *gitconfig.Config) *WorkTreeObserver {
 
 	return &WorkTreeObserver{
 		scoConfig:          config,
 		config:             gitConfig,
 		gitRuntimeDataFile: "commits_sessions.json",
-		util:               util,
 	}
 }
 
@@ -53,9 +48,12 @@ func (observer *WorkTreeObserver) Start() {
 	if !observer.hasMappingToCurrentGitCommit(parent) {
 		newSession := observer.createNewMappingToCurrentGitCommit(parent)
 		log.Println("Creating new session for current work tree:", newSession)
+		observer.config.SetCurrentScoSession(newSession)
 		observer.config.Persist()
 	} else {
-		log.Println("Continue with session:", observer.getCurrentSession(parent))
+		session := observer.getCurrentSession(parent)
+		observer.config.SetCurrentScoSession(session)
+		log.Println("Continue with session:", session)
 	}
 
 	// update config if parent is not known -> create new uuid subdir which is the new working dir

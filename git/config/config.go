@@ -9,25 +9,24 @@ import (
 	"path/filepath"
 
 	"github.com/floriangrundig/scofw/config"
-	"github.com/floriangrundig/scofw/util"
 )
 
 type GitRuntimeData struct {
-	GitCommits map[string]string
+	GitCommits  map[string]string
+	LastChanges map[string]string
 }
 
 type Config struct {
 	scoConfig          *config.Config
-	util               *util.Util
 	gitRuntimeDataFile string
 	GitRuntimeData
+	CurrentScoSession string
 }
 
-func New(config *config.Config, util *util.Util) *Config {
+func New(config *config.Config) *Config {
 
 	gitConfig := Config{
 		scoConfig:          config,
-		util:               util,
 		gitRuntimeDataFile: filepath.Join(config.ScoDir, "commits_sessions.json"),
 	}
 
@@ -59,6 +58,10 @@ func (config *Config) setGitRuntimeData(rt GitRuntimeData) {
 	config.GitRuntimeData = rt
 }
 
+func (config *Config) SetCurrentScoSession(session string) {
+	config.CurrentScoSession = session
+}
+
 func (config *Config) gitRuntimeDataFileExists() bool {
 	if _, err := os.Stat(config.gitRuntimeDataFile); os.IsNotExist(err) {
 		return false
@@ -87,7 +90,8 @@ func (config *Config) initializeGitRuntimeDataFile() {
 	file := config.gitRuntimeDataFile
 
 	gitRuntimeData := GitRuntimeData{
-		GitCommits: make(map[string]string),
+		GitCommits:  make(map[string]string),
+		LastChanges: make(map[string]string),
 	}
 
 	b, err := json.MarshalIndent(gitRuntimeData, "", "  ")
