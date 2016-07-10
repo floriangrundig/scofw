@@ -13,7 +13,7 @@ import (
 
 type GitRuntimeData struct {
 	GitCommits  map[string]string
-	LastChanges map[string]uint32
+	LastChanges map[string]interface{}
 }
 
 type Config struct {
@@ -91,7 +91,7 @@ func (config *Config) initializeGitRuntimeDataFile() {
 
 	gitRuntimeData := GitRuntimeData{
 		GitCommits:  make(map[string]string),
-		LastChanges: make(map[string]uint32),
+		LastChanges: make(map[string]interface{}),
 	}
 
 	b, err := json.MarshalIndent(gitRuntimeData, "", "  ")

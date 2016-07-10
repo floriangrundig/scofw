@@ -127,7 +127,17 @@ func (gr *GitReporter) Start() {
 			if event.Op != fw.Chmod {
 
 				log.Printf("Received event %s %d\n", event.Name, event.Op)
-				lastChange, alreadyTracked := gr.gitConfig.LastChanges[event.Name]
+				lastChanges, anyChangesForSession := gr.gitConfig.LastChanges[gr.gitConfig.CurrentScoSession]
+
+				var alreadyTracked bool
+				var lastChange uint32
+
+				if !anyChangesForSession {
+					alreadyTracked = false
+				} else {
+					changesForSession := lastChanges.(map[string]uint32)
+					lastChange, alreadyTracked = changesForSession[event.Name]
+				}
 
 				if !alreadyTracked {
 					go gr.handleFirstChange(event)
@@ -224,14 +234,28 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 
 			// we store contentB as a snapshot of that file -> all further diffs will be made between workspace file and snapshot
 			gr.util.WriteFile(&contentB, baseFile)
-			gr.gitConfig.LastChanges[event.Name] = uint32(event.Op)
-			gr.gitConfig.Persist()
+
+			gr.storeLastChange(event)
 			return
 		}
 	}
 
 	log.Printf("ERROR: No matching git change to file: %s", event.Op, event.Name)
 
+}
+
+func (gr *GitReporter) storeLastChange(event *fw.FileEvent) {
+	lastChanges, anyChangesForSession := gr.gitConfig.LastChanges[gr.gitConfig.CurrentScoSession]
+
+	if !anyChangesForSession {
+		gr.gitConfig.LastChanges[gr.gitConfig.CurrentScoSession] = make(map[string]uint32)
+	}
+
+	lastChanges, _ = gr.gitConfig.LastChanges[gr.gitConfig.CurrentScoSession]
+
+	lc := lastChanges.(map[string]uint32)
+	lc[event.Name] = uint32(event.Op)
+	gr.gitConfig.Persist()
 }
 
 func (gr *GitReporter) getOriginalBlob(commitTree *git.Tree, event *fw.FileEvent) *git.Blob {
@@ -254,7 +278,7 @@ func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange uint32) {
 	options, err := git.DefaultDiffOptions()
 	verifyNoError(err)
 
-	// Specifying full patch indices.
+	// Specifying full patch indices. TODO what is needed here?
 	options.IdAbbrev = 40
 	options.Flags |= git.DiffIncludeUntracked
 
@@ -297,9 +321,7 @@ func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange uint32) {
 
 	// we store contentB as a snapshot of that file -> all further diffs will be made between workspace file and snapshot
 	gr.util.WriteFile(&contentB, baseFile)
-
-	return
-
+	gr.storeLastChange(event)
 }
 
 func (gr *GitReporter) logStatusDiffDelta(delta *git.DiffDelta) {
