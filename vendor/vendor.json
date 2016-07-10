@@ -39,18 +39,6 @@
 			"revisionTime": "2016-06-07T14:43:47Z"
 		},
 		{
-			"checksumSHA1": "y8X2UtXB1UrBN+lYkcx+WWBQFic=",
-			"path": "github.com/sergi/go-diff",
-			"revision": "ec7fdbb58eb3e300c8595ad5ac74a5aa50019cc7",
-			"revisionTime": "2015-10-21T19:14:53Z"
-		},
-		{
-			"checksumSHA1": "5SsK4Rr15FZgGP4zDjmKWHyKwp8=",
-			"path": "github.com/sergi/go-diff/diffmatchpatch",
-			"revision": "ec7fdbb58eb3e300c8595ad5ac74a5aa50019cc7",
-			"revisionTime": "2015-10-21T19:14:53Z"
-		},
-		{
 			"path": "golang.org/x/sys/kqueue",
 			"revision": ""
 		},
