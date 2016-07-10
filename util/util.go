@@ -20,10 +20,8 @@ func New(config *config.Config) *Util {
 	}
 }
 
-// func (util *Util) Get
-
-func (util *Util) CreateScoFolder(folders ...string) {
-	file := filepath.Join(util.config.ScoDir, filepath.Join(folders...))
+func (util *Util) CreateScoFolder(pathElements ...string) {
+	file := filepath.Join(util.config.ScoDir, filepath.Join(pathElements...))
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		err = os.MkdirAll(file, util.config.ScoDirPermissions)
 		log.Println("Creating directory", file)
@@ -33,8 +31,15 @@ func (util *Util) CreateScoFolder(folders ...string) {
 	}
 }
 
-func (util *Util) WriteFile(content *[]byte, folders ...string) {
-	path := filepath.Join(util.config.ScoDir, filepath.Join(folders...))
+func (util *Util) ReadScoFile(pathElements ...string) (*[]byte, error) {
+	file := filepath.Join(util.config.ScoDir, filepath.Join(pathElements...))
+
+	content, err := ioutil.ReadFile(file)
+	return &content, err
+}
+
+func (util *Util) WriteFile(content *[]byte, pathElements ...string) {
+	path := filepath.Join(util.config.ScoDir, filepath.Join(pathElements...))
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err = ioutil.WriteFile(path, *content, util.config.ScoDirPermissions)
 		log.Println("Creating file", path)
@@ -50,8 +55,8 @@ func (util *Util) WriteFile(content *[]byte, folders ...string) {
 	}
 }
 
-func (util *Util) CopyFile(src string, destfolders ...string) error {
-	dst := filepath.Join(util.config.ScoDir, filepath.Join(destfolders...))
+func (util *Util) CopyFile(src string, destpathElements ...string) error {
+	dst := filepath.Join(util.config.ScoDir, filepath.Join(destpathElements...))
 	s, err := os.Open(src)
 	if err != nil {
 		return err
