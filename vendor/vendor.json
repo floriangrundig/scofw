@@ -3,6 +3,18 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "kjbdrB/ROp6v/7WFUUlyq/fUOPY=",
+			"path": "github.com/FlorianGrundig/go-diff",
+			"revision": "ec7fdbb58eb3e300c8595ad5ac74a5aa50019cc7",
+			"revisionTime": "2015-10-21T19:14:53Z"
+		},
+		{
+			"checksumSHA1": "zCujM2OZYqCDd86isfhH7V/KYbs=",
+			"path": "github.com/FlorianGrundig/go-diff/diffmatchpatch",
+			"revision": "ec7fdbb58eb3e300c8595ad5ac74a5aa50019cc7",
+			"revisionTime": "2015-10-21T19:14:53Z"
+		},
+		{
 			"checksumSHA1": "KmjnydoAbofMieIWm+it5OWERaM=",
 			"path": "github.com/alecthomas/template",
 			"revision": "a0175ee3bccc567396460bf5acd36800cb10c49c",
@@ -53,6 +65,10 @@
 			"path": "gopkg.in/alecthomas/kingpin.v2",
 			"revision": "8cccfa8eb2e3183254457fb1749b2667fbc364c7",
 			"revisionTime": "2016-02-17T09:03:01Z"
+		},
+		{
+			"path": "https://github.com/FlorianGrundig/go-diff",
+			"revision": ""
 		}
 	],
 	"rootPath": "github.com/floriangrundig/scofw"
