@@ -14,6 +14,7 @@ import (
 	"github.com/libgit2/git2go"
 )
 
+// TODO we need a channel for the publisher
 type GitReporter struct {
 	config           *config.Config
 	gitConfig        *gitconfig.Config
@@ -135,8 +136,8 @@ func (gr *GitReporter) Start() {
 				if !anyChangesForSession {
 					alreadyTracked = false
 				} else {
-					changesForSession := lastChanges.(map[string]uint32)
-					lastChange, alreadyTracked = changesForSession[event.Name]
+
+					lastChange, alreadyTracked = lastChanges[event.Name]
 				}
 
 				if !alreadyTracked {
@@ -160,6 +161,14 @@ func verifyNoError(err error) {
 func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 	log.Println("This is the first change detected for", event.Name)
 
+	baseFolder := filepath.Join("diffs", gr.gitConfig.CurrentScoSession, filepath.Dir(event.Name))
+	baseFile := filepath.Join(baseFolder, filepath.Base(event.Name))
+	gr.util.CreateScoFolder(baseFolder)
+
+	var contentA []byte
+	var contentB []byte
+	emptyContent := []byte("")
+
 	// TODO: I assume you can only work on Head or do we need a more sophisticated way of determing what I'm working on
 	ref, err := gr.repo.Head()
 	verifyNoError(err)
@@ -178,12 +187,15 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 	// Specifying full patch indices.
 	options.IdAbbrev = 40
 	options.Flags |= git.DiffIncludeUntracked
+	options.Flags |= git.DiffShowUntrackedContent
 
 	gitDiff, err := gr.repo.DiffTreeToWorkdir(commitTree, &options)
 	verifyNoError(err)
 
 	numDeltas, err := gitDiff.NumDeltas()
 	verifyNoError(err)
+
+	var contentDeltaDetermined bool
 
 	for d := 0; d < numDeltas; d++ {
 
@@ -195,17 +207,8 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 
 			gr.logStatusDiffDelta(&delta)
 
-			baseFolder := filepath.Join("diffs", gr.gitConfig.CurrentScoSession, filepath.Dir(event.Name))
-			baseFile := filepath.Join(baseFolder, filepath.Base(event.Name))
-
-			gr.util.CreateScoFolder(baseFolder)
-
-			var contentA []byte
-			var contentB []byte
-			emptyContent := []byte("")
-
 			if delta.Status != git.DeltaUntracked {
-				log.Println("This is the first change detected for", event.Name)
+				log.Println("This file is not tracked by git", event.Name)
 				blob := gr.getOriginalBlob(commitTree, event)
 				contentA = blob.Contents()
 
@@ -221,26 +224,36 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 				contentB = emptyContent // TODO is this really identical to delete?
 			}
 
-			// TODO if event.Name referes to a new file -> the patch contains "new file mode 100644" -> we should change the file mode to the original settings
-			patch, err := gr.repo.PatchFromBuffers(event.Name, event.Name, contentA, contentB, &options)
-			defer patch.Free()
-			verifyNoError(err)
-			patchString, err := patch.String()
-			_, err = patch.String()
-			verifyNoError(err)
+			contentDeltaDetermined = true
+			break
 
-			// TOOD use channel to publish change...
-			log.Printf("\n%s", patchString)
-
-			// we store contentB as a snapshot of that file -> all further diffs will be made between workspace file and snapshot
-			gr.util.WriteFile(&contentB, baseFile)
-
-			gr.storeLastChange(event)
-			return
 		}
 	}
 
-	log.Printf("ERROR: No matching git change to file: %s", event.Op, event.Name)
+	if !contentDeltaDetermined {
+		log.Printf("ERROR: No matching git change for file: %s", event.Op, event.Name)
+		log.Printf("Going to fallback - assuming this is a new file in some subdirectory")
+
+		contentA = emptyContent
+		contentB, err = ioutil.ReadFile(event.Name) // TODO can we be sure that this file is there (deleted?)?
+		verifyNoError(err)
+	}
+
+	// TODO if event.Name referes to a new file -> the patch contains "new file mode 100644" -> we should change the file mode to the original settings
+	patch, err := gr.repo.PatchFromBuffers(event.Name, event.Name, contentA, contentB, &options)
+	defer patch.Free()
+	verifyNoError(err)
+	patchString, err := patch.String()
+	_, err = patch.String()
+	verifyNoError(err)
+
+	// TOOD use channel to publish change
+	log.Printf("\n%s", patchString)
+
+	// we store contentB as a snapshot of that file -> all further diffs will be made between workspace file and snapshot
+	gr.util.WriteFile(&contentB, baseFile)
+
+	gr.storeLastChange(event)
 
 }
 
@@ -253,8 +266,7 @@ func (gr *GitReporter) storeLastChange(event *fw.FileEvent) {
 
 	lastChanges, _ = gr.gitConfig.LastChanges[gr.gitConfig.CurrentScoSession]
 
-	lc := lastChanges.(map[string]uint32)
-	lc[event.Name] = uint32(event.Op)
+	lastChanges[event.Name] = uint32(event.Op)
 	gr.gitConfig.Persist()
 }
 
@@ -276,6 +288,7 @@ func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange uint32) {
 	log.Println("This is a change detected for", event.Name)
 
 	options, err := git.DefaultDiffOptions()
+
 	verifyNoError(err)
 
 	// Specifying full patch indices. TODO what is needed here?

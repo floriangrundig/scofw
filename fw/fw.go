@@ -76,7 +76,7 @@ func (fw *FileWatcher) Start() {
 				}
 			}
 		} else {
-			log.Println("Error while walking through the workspace", err)
+			log.Println("Error while walking through directory tree in workspace", err)
 		}
 
 		return nil
