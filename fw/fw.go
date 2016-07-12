@@ -49,7 +49,6 @@ func (fw *FileWatcher) Start() {
 	}
 
 	log.Println("Watching directory: " + fw.config.BaseDir)
-
 	defer watcher.Close()
 
 	done := make(chan bool)
@@ -57,29 +56,6 @@ func (fw *FileWatcher) Start() {
 		for {
 			select {
 			case event := <-watcher.Events:
-				/*
-				 * TODO
-				 * We'll have a .sco subdirectory with current git hash as subfolder
-				 * where we'll store the intermediate file versions.
-				 *
-				 * When a change of a file e.g. f1.txt is detected for the first time,
-				 * we copy the file into the .sco/head-git-hash/.../f1.txt.tmp
-				 * We use the git-diff to report the first change. If git-diff
-				 * signal an untracked file we create an empty file with the real
-				 * name f1.txt.base and use a normal diff with f1.txt.tmp.
-				 * After performing the diff we move the f1.txt.tmp to f1.txt.base
-				 * Maybe we store each patch (with corrected paths) as f1.txt.p1 ... f1.txt.p9999
-				 *
-				 * When further changes were detected we copy the file as f1.txt.tmp
-				 * again and use a normal diff to detect a change with f1.txt.base -
-				 * after that we move the f1.txt.tmp to f1.txt.base.
-				 * Maybe we store each patch (with corrected paths) as f1.txt.p1 ... f1.txt.p9999
-				 *
-				 * However we have to make sure that we don't copy a file to as file.tmp
-				 * if there's still such file - then we have to retry later ...
-
-				 */
-
 				if !fw.config.GitIgnore.MatchesPath(event.Name) {
 					fw.eventSink <- convertFsNotifyEvent(event)
 				}
