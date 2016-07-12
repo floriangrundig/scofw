@@ -9,21 +9,22 @@ import (
 
 	"github.com/floriangrundig/scofw/config"
 	"github.com/floriangrundig/scofw/fw"
+	wkTree "github.com/floriangrundig/scofw/git"
 	gitconfig "github.com/floriangrundig/scofw/git/config"
 	"github.com/floriangrundig/scofw/util"
 	"github.com/libgit2/git2go"
 )
 
-// TODO we need a channel for the publisher
 type GitReporter struct {
 	config           *config.Config
 	gitConfig        *gitconfig.Config
 	repo             *git.Repository
 	util             *util.Util
+	observer         *wkTree.WorkTreeObserver
 	fileEventChannel chan *fw.FileEvent
 }
 
-func New(config *config.Config, gitConfig *gitconfig.Config, util *util.Util, fileEventChannel chan *fw.FileEvent) *GitReporter {
+func New(config *config.Config, gitConfig *gitconfig.Config, util *util.Util, observer *wkTree.WorkTreeObserver, fileEventChannel chan *fw.FileEvent) *GitReporter {
 
 	// the default fw-engine uses git
 	// there might be some other engines which don't need git
@@ -38,6 +39,7 @@ func New(config *config.Config, gitConfig *gitconfig.Config, util *util.Util, fi
 		gitConfig:        gitConfig,
 		repo:             repo,
 		util:             util,
+		observer:         observer,
 		fileEventChannel: fileEventChannel,
 	}
 }
@@ -122,7 +124,10 @@ func (gr *GitReporter) Start() {
 
 			if !ok {
 				log.Println("Shutting down git reporter")
+				break
 			}
+
+			gr.observer.UpdateCurrentScoSession() // since we currently are not able to detect a commit we have to call update manually
 
 			// flg: I don't know why but when editing with atom editor lot's of chmod-events are triggered - we're not interested in those
 			if event.Op != fw.Chmod {
@@ -208,11 +213,11 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 			gr.logStatusDiffDelta(&delta)
 
 			if delta.Status != git.DeltaUntracked {
-				log.Println("This file is not tracked by git", event.Name)
 				blob := gr.getOriginalBlob(commitTree, event)
 				contentA = blob.Contents()
 
 			} else {
+				log.Println("This file is not tracked by git", event.Name)
 				// we create an empty file in diffs/.../a since this file event belongs to a new file
 				contentA = emptyContent
 			}

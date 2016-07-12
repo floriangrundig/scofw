@@ -14,36 +14,45 @@ type GitRuntimeData struct {
 	GitCommits map[string]string
 }
 
+// TODO should we rename that struct since it's currently not observing anything - it's totally static
 type WorkTreeObserver struct {
 	scoConfig          *config.Config
 	config             *gitconfig.Config
 	gitRuntimeDataFile string
+	repo               *git.Repository
 	GitRuntimeData
 }
 
 func New(config *config.Config, gitConfig *gitconfig.Config) *WorkTreeObserver {
 
-	return &WorkTreeObserver{
-		scoConfig:          config,
-		config:             gitConfig,
-		gitRuntimeDataFile: "commits_sessions.json",
-	}
-}
-
-func (observer *WorkTreeObserver) Start() {
-
-	repo, err := git.OpenRepository(observer.scoConfig.BaseDir)
+	repo, err := git.OpenRepository(config.BaseDir)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	ref, err := repo.Head() // TODO is this really what we've checked out?
+	return &WorkTreeObserver{
+		scoConfig:          config,
+		config:             gitConfig,
+		gitRuntimeDataFile: "commits_sessions.json",
+		repo:               repo,
+	}
+}
+
+func (observer *WorkTreeObserver) Start() {
+	observer.UpdateCurrentScoSession()
+}
+
+func (observer *WorkTreeObserver) UpdateCurrentScoSession() {
+
+	// TODO it would be nice if we detect a new ref automatically
+
+	ref, err := observer.repo.Head() // TODO is this really what we've checked out?
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	parent := fmt.Sprint(ref.Target())
-	log.Println("Current work tree:", parent)
+	// log.Println("Current work tree:", parent)
 
 	if !observer.hasMappingToCurrentGitCommit(parent) {
 		newSession := observer.createNewMappingToCurrentGitCommit(parent)
@@ -53,10 +62,8 @@ func (observer *WorkTreeObserver) Start() {
 	} else {
 		session := observer.getCurrentSession(parent)
 		observer.config.SetCurrentScoSession(session)
-		log.Println("Continue with session:", session)
+		// log.Println("Continue with session:", session)
 	}
-
-	// update config if parent is not known -> create new uuid subdir which is the new working dir
 }
 
 func (observer *WorkTreeObserver) hasMappingToCurrentGitCommit(parent string) bool {
