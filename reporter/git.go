@@ -11,20 +11,22 @@ import (
 	"github.com/floriangrundig/scofw/fw"
 	wkTree "github.com/floriangrundig/scofw/git"
 	gitconfig "github.com/floriangrundig/scofw/git/config"
+	"github.com/floriangrundig/scofw/publisher"
 	"github.com/floriangrundig/scofw/util"
 	"github.com/libgit2/git2go"
 )
 
 type GitReporter struct {
-	config           *config.Config
-	gitConfig        *gitconfig.Config
-	repo             *git.Repository
-	util             *util.Util
-	observer         *wkTree.WorkTreeObserver
-	fileEventChannel chan *fw.FileEvent
+	config                    *config.Config
+	gitConfig                 *gitconfig.Config
+	repo                      *git.Repository
+	util                      *util.Util
+	observer                  *wkTree.WorkTreeObserver
+	fileEventChannel          chan *fw.FileEvent
+	fileChangedMessageChannel chan *publisher.Message
 }
 
-func New(config *config.Config, gitConfig *gitconfig.Config, util *util.Util, observer *wkTree.WorkTreeObserver, fileEventChannel chan *fw.FileEvent) *GitReporter {
+func New(config *config.Config, gitConfig *gitconfig.Config, util *util.Util, observer *wkTree.WorkTreeObserver, fileEventChannel chan *fw.FileEvent, fileChangedMessageChannel chan *publisher.Message) *GitReporter {
 
 	// the default fw-engine uses git
 	// there might be some other engines which don't need git
@@ -35,12 +37,13 @@ func New(config *config.Config, gitConfig *gitconfig.Config, util *util.Util, ob
 	}
 
 	return &GitReporter{
-		config:           config,
-		gitConfig:        gitConfig,
-		repo:             repo,
-		util:             util,
-		observer:         observer,
-		fileEventChannel: fileEventChannel,
+		config:                    config,
+		gitConfig:                 gitConfig,
+		repo:                      repo,
+		util:                      util,
+		observer:                  observer,
+		fileEventChannel:          fileEventChannel,
+		fileChangedMessageChannel: fileChangedMessageChannel,
 	}
 }
 
@@ -146,9 +149,9 @@ func (gr *GitReporter) Start() {
 				}
 
 				if !alreadyTracked {
-					go gr.handleFirstChange(event)
+					gr.handleFirstChange(event)
 				} else {
-					go gr.handleChange(event, lastChange)
+					gr.handleChange(event, lastChange)
 				}
 			}
 
@@ -252,8 +255,12 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 	_, err = patch.String()
 	verifyNoError(err)
 
+	gr.fileChangedMessageChannel <- &publisher.Message{
+		FileEvent: event,
+		Patch:     &patchString,
+	}
 	// TOOD use channel to publish change
-	log.Printf("\n%s", patchString)
+	// log.Printf("\n%s", patchString)
 
 	// we store contentB as a snapshot of that file -> all further diffs will be made between workspace file and snapshot
 	gr.util.WriteFile(&contentB, baseFile)
@@ -334,8 +341,11 @@ func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange uint32) {
 	_, err = patch.String()
 	verifyNoError(err)
 
-	// TOOD use channel to publish change...
-	log.Printf("\n%s", patchString)
+	// publish event
+	gr.fileChangedMessageChannel <- &publisher.Message{
+		FileEvent: event,
+		Patch:     &patchString,
+	}
 
 	// we store contentB as a snapshot of that file -> all further diffs will be made between workspace file and snapshot
 	gr.util.WriteFile(&contentB, baseFile)
