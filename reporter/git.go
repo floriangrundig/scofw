@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"io/ioutil"
+
 	"path/filepath"
 
 	"github.com/floriangrundig/scofw/config"
@@ -239,10 +240,20 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 	}
 
 	if !contentDeltaDetermined {
-		log.Printf("ERROR: No matching git change for file: %s", event.Op, event.Name)
-		log.Printf("Going to fallback - assuming this is a new file in some subdirectory")
 
-		contentA = emptyContent
+		log.Printf("No matching git change for file: %s", event.Op, event.Name)
+
+		_, err := commitTree.EntryByPath(event.Name)
+		if err == nil {
+			blob := gr.getOriginalBlob(commitTree, event)
+			log.Printf("Anyway %s is tracked by git and git doesn't detect a change - assuming nothing has changed", event.Name)
+			contentA = blob.Contents()
+		} else {
+			log.Printf("Going to fallback - assuming %s is a new file", event.Name)
+			contentA = emptyContent
+
+		}
+
 		contentB, err = ioutil.ReadFile(event.Name) // TODO can we be sure that this file is there (deleted?)?
 		verifyNoError(err)
 	}

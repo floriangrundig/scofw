@@ -48,7 +48,10 @@ func (publisher *Publisher) Start() {
 				log.Println("Shutting down publisher")
 				break
 			}
-			publisher.log(msg)
+
+			if *msg.Patch != "" {
+				publisher.log(msg)
+			}
 		}
 	}()
 }
