@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/floriangrundig/scofw/config"
 	"github.com/floriangrundig/scofw/fw"
@@ -51,6 +52,8 @@ func (publisher *Publisher) Start() {
 
 			if *msg.Patch != "" {
 				publisher.log(msg)
+
+				publisher.logInGourceFormat(msg)
 			}
 		}
 	}()
@@ -72,4 +75,41 @@ func (publisher *Publisher) log(msg *Message) {
 	mylog := log.New(multi, "", log.Ldate|log.Ltime)
 	mylog.Println(*msg.Patch)
 
+}
+
+func (publisher *Publisher) logInGourceFormat(msg *Message) {
+	// TODO to open a file and creating a logger each call is insufficient -> store loggers per session in a map to reuse them
+	filename := fmt.Sprintf("%s.gource.log", publisher.gitConfig.CurrentScoSession)
+
+	file, err := os.OpenFile(filepath.Join(publisher.config.ScoDir, "logs", filename), os.O_CREATE|os.O_WRONLY|os.O_APPEND, publisher.config.ScoDirPermissions)
+	if err != nil {
+		log.Fatalln("Failed to open log file", filename, ":", err)
+	}
+
+	defer file.Close()
+
+	text := fmt.Sprintf("%v|flg|%s|%s\n", int32(time.Now().Unix()), fileEventToString(msg.FileEvent), string(msg.FileEvent.Name))
+
+	if _, err = file.WriteString(text); err != nil {
+		panic(err)
+	}
+
+}
+
+func fileEventToString(event *fw.FileEvent) string {
+
+	if event.Op&fw.Chmod == fw.Chmod {
+		return "M"
+	}
+	if event.Op&fw.Create == fw.Create {
+		return "A"
+	}
+	if event.Op&fw.Write == fw.Write {
+		return "M"
+	}
+	if event.Op&fw.Remove == fw.Remove {
+		return "D"
+	}
+
+	return "M" // rename
 }
