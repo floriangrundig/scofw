@@ -1,7 +1,9 @@
 package gitReporter
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"io/ioutil"
@@ -149,6 +151,8 @@ func (gr *GitReporter) Start() {
 					lastChange, alreadyTracked = lastChanges[event.Name]
 				}
 
+				// TODO if we receive a delete on a folder we have to deal with it -> e.g. deleting all files we know of (even files we don't know -> they not tracked but they should be listed in the git tracking...)
+
 				if !alreadyTracked {
 					gr.handleFirstChange(event)
 				} else {
@@ -161,24 +165,27 @@ func (gr *GitReporter) Start() {
 }
 
 func FileEventToString(event *fw.FileEvent) string {
+	result := ""
+	if event.Op&fw.Chmod == fw.Chmod {
+		result = fmt.Sprint("| chmod |", result)
+	}
+	if event.Op&fw.Create == fw.Create {
+		result = fmt.Sprint("| create |", result)
+	}
+	if event.Op&fw.Write == fw.Write {
+		result = fmt.Sprint("| write |", result)
+	}
+	if event.Op&fw.Remove == fw.Remove {
+		result = fmt.Sprint("| remove |", result)
+	}
+	if event.Op&fw.Rename == fw.Rename {
+		result = fmt.Sprint("| rename |", result)
+	}
 
-	if event.Op == fw.Chmod {
-		return "chmod"
+	if result == "" {
+		return "!!!unknown - this is not expected to happen!!!"
 	}
-	if event.Op == fw.Create {
-		return "create"
-	}
-	if event.Op == fw.Write {
-		return "write"
-	}
-	if event.Op == fw.Remove {
-		return "remove"
-	}
-	if event.Op == fw.Rename {
-		return "rename"
-	}
-
-	return "!!!unknown - this is not expected to happen!!!"
+	return result
 }
 
 func verifyNoError(err error) {
@@ -270,12 +277,21 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 			log.Printf("Anyway %s is tracked by git and git doesn't detect a change - assuming nothing has changed", event.Name)
 			contentA = blob.Contents()
 		} else {
-			log.Printf("Going to fallback - assuming %s is a new file", event.Name)
+			log.Printf("Going to fallback - %s seems to be an untracked file", event.Name)
 			contentA = emptyContent
 		}
 
-		contentB, err = ioutil.ReadFile(event.Name) // TODO can we be sure that this file is there (deleted?)?
-		verifyNoError(err)
+		if event.Op&fw.Remove != fw.Remove {
+			fmt.Println("not a removal")
+			if _, err := os.Stat(event.Name); os.IsNotExist(err) {
+				contentB = emptyContent
+			} else {
+				contentB, err = ioutil.ReadFile(event.Name) // TODO can we be sure that this file is there (deleted?)?
+				verifyNoError(err)
+			}
+		} else {
+			contentB = emptyContent
+		}
 	}
 
 	// TODO if event.Name referes to a new file -> the patch contains "new file mode 100644" -> we should change the file mode to the original settings
@@ -293,10 +309,14 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 	}
 
 	// we store contentB as a snapshot of that file -> all further diffs will be made between workspace file and snapshot
-	gr.util.WriteFile(&contentB, baseFile)
+
+	if event.Op&fw.Remove != fw.Remove {
+		gr.util.WriteFile(&contentB, baseFile)
+	} else {
+		gr.util.RemoveFile(baseFile)
+	}
 
 	gr.storeLastChange(event)
-
 }
 
 func (gr *GitReporter) storeLastChange(event *fw.FileEvent) {
@@ -344,20 +364,24 @@ func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange uint32) {
 	var contentB []byte
 	emptyContent := []byte("")
 
-	if event.Op&fw.Create == fw.Create || event.Op&fw.Write == fw.Write || event.Op&fw.Rename == fw.Rename { // TODO: how to handle renamed files? Maybe we should treat them as removed? (Beware -> IntelliJ stores the changes in a tmp file and renames that tmp file to the current file)
+	if lastChange&uint32(fw.Remove) != uint32(fw.Remove) { // TODO: how to handle renamed files? (Beware -> IntelliJ stores the changes in a tmp file and renames that tmp file to the current file)
 		log.Printf("Comparing current %s with last snapshot %s\n", event.Name, baseFile)
 		contentA, err = gr.util.ReadScoFile(baseFile)
 		verifyNoError(err)
-	} else if event.Op == fw.Remove {
+	} else {
 		// we create an empty file in diffs/.../a since this file event belongs to a new file
 		contentA = &emptyContent // TODO this is not correct for IntelliJ -> when you revert your changes it's removed first and then created again... so we think it's a complete new file
-	} else {
-		contentA = &emptyContent
 	}
 
-	if event.Op != fw.Remove {
-		contentB, err = ioutil.ReadFile(event.Name)
-		verifyNoError(err)
+	if event.Op&fw.Remove != fw.Remove {
+
+		if _, err = os.Stat(event.Name); os.IsNotExist(err) {
+			contentB = emptyContent
+		} else {
+			contentB, err = ioutil.ReadFile(event.Name) // TODO can we be sure that this file is there (deleted?)?
+			verifyNoError(err)
+		}
+
 	} else {
 		contentB = emptyContent // TODO is this really identical to delete?
 	}
@@ -377,7 +401,12 @@ func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange uint32) {
 	}
 
 	// we store contentB as a snapshot of that file -> all further diffs will be made between workspace file and snapshot
-	gr.util.WriteFile(&contentB, baseFile)
+	if event.Op&fw.Remove != fw.Remove {
+		gr.util.WriteFile(&contentB, baseFile)
+	} else {
+		gr.util.RemoveFile(baseFile)
+	}
+
 	gr.storeLastChange(event)
 }
 

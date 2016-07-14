@@ -38,6 +38,19 @@ func (util *Util) ReadScoFile(pathElements ...string) (*[]byte, error) {
 	return &content, err
 }
 
+func (util *Util) RemoveFile(pathElements ...string) {
+	path := filepath.Join(util.config.ScoDir, filepath.Join(pathElements...))
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+	} else {
+		err = os.RemoveAll(path)
+		if err != nil {
+			log.Println("ERROR", err)
+		}
+
+	}
+
+}
+
 func (util *Util) WriteFile(content *[]byte, pathElements ...string) {
 	path := filepath.Join(util.config.ScoDir, filepath.Join(pathElements...))
 	if _, err := os.Stat(path); os.IsNotExist(err) {
