@@ -45,7 +45,7 @@ func (observer *WorkTreeObserver) Start() {
 func (observer *WorkTreeObserver) UpdateCurrentScoSession() {
 
 	// TODO it would be nice if we detect a new ref automatically
-
+	// TODO handle bare repositories
 	ref, err := observer.repo.Head() // TODO is this really what we've checked out?
 	if err != nil {
 		log.Fatal(err)

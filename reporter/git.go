@@ -136,7 +136,7 @@ func (gr *GitReporter) Start() {
 			// flg: I don't know why but when editing with atom editor lot's of chmod-events are triggered - we're not interested in those
 			if event.Op != fw.Chmod {
 
-				log.Printf("Received event %s %d\n", event.Name, event.Op)
+				log.Printf("Received event %s %d (%s)\n", event.Name, event.Op, FileEventToString(event))
 				lastChanges, anyChangesForSession := gr.gitConfig.LastChanges[gr.gitConfig.CurrentScoSession]
 
 				var alreadyTracked bool
@@ -158,6 +158,27 @@ func (gr *GitReporter) Start() {
 
 		}
 	}()
+}
+
+func FileEventToString(event *fw.FileEvent) string {
+
+	if event.Op == fw.Chmod {
+		return "chmod"
+	}
+	if event.Op == fw.Create {
+		return "create"
+	}
+	if event.Op == fw.Write {
+		return "write"
+	}
+	if event.Op == fw.Remove {
+		return "remove"
+	}
+	if event.Op == fw.Rename {
+		return "rename"
+	}
+
+	return "!!!unknown - this is not expected to happen!!!"
 }
 
 func verifyNoError(err error) {
@@ -251,7 +272,6 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 		} else {
 			log.Printf("Going to fallback - assuming %s is a new file", event.Name)
 			contentA = emptyContent
-
 		}
 
 		contentB, err = ioutil.ReadFile(event.Name) // TODO can we be sure that this file is there (deleted?)?
@@ -266,12 +286,11 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 	_, err = patch.String()
 	verifyNoError(err)
 
+	// send to publisher
 	gr.fileChangedMessageChannel <- &publisher.Message{
 		FileEvent: event,
 		Patch:     &patchString,
 	}
-	// TOOD use channel to publish change
-	// log.Printf("\n%s", patchString)
 
 	// we store contentB as a snapshot of that file -> all further diffs will be made between workspace file and snapshot
 	gr.util.WriteFile(&contentB, baseFile)
@@ -321,20 +340,19 @@ func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange uint32) {
 	baseFolder := filepath.Join("diffs", gr.gitConfig.CurrentScoSession, filepath.Dir(event.Name))
 	baseFile := filepath.Join(baseFolder, filepath.Base(event.Name))
 
-	gr.util.CreateScoFolder(baseFile)
-
 	var contentA *[]byte
 	var contentB []byte
 	emptyContent := []byte("")
 
-	if event.Op == fw.Create || event.Op == fw.Write {
+	if event.Op&fw.Create == fw.Create || event.Op&fw.Write == fw.Write || event.Op&fw.Rename == fw.Rename { // TODO: how to handle renamed files? Maybe we should treat them as removed? (Beware -> IntelliJ stores the changes in a tmp file and renames that tmp file to the current file)
+		log.Printf("Comparing current %s with last snapshot %s\n", event.Name, baseFile)
 		contentA, err = gr.util.ReadScoFile(baseFile)
 		verifyNoError(err)
 	} else if event.Op == fw.Remove {
 		// we create an empty file in diffs/.../a since this file event belongs to a new file
-		contentA = &emptyContent
+		contentA = &emptyContent // TODO this is not correct for IntelliJ -> when you revert your changes it's removed first and then created again... so we think it's a complete new file
 	} else {
-		contentA = &emptyContent // TODO: how to handle renamed files? Maybe we should treat them as removed?
+		contentA = &emptyContent
 	}
 
 	if event.Op != fw.Remove {

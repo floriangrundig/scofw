@@ -1,6 +1,12 @@
 #SCO-Filewatcher client
 
-TODO 
+TODO
+
+## Configuration
+Use `scofw --help` to see the list of flags and commands.
+
+## Gource
+Installing Gource on a Mac can be done with homebrew: `brew install gource`
 
 ## Development
 

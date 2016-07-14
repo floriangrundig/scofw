@@ -18,16 +18,24 @@ type Config struct {
 }
 
 var (
-	repoPath      = kingpin.Flag("path", "Path to reposiory to watch.").Default(".").String()
+	repoPath = kingpin.Flag("path", "Path to reposiory to watch.").Default(".").String()
+	// TODO we should add one flag to add a list of ignore patterns from command line e.g. -ignore="out target"
 	scoIgnorePath = kingpin.Flag("ignoreFile", "Path to ignore file.").Default(".gitignore").String()
 )
 
 func New() *Config {
 	kingpin.Parse()
 
+	error := os.Chdir(*repoPath)
+	if error != nil {
+		log.Fatal("Could change current working directory to given path", error)
+	}
+
+	log.Println("Changing current workdir to ", *repoPath)
+
 	scoDir := ".sco"
 
-	mandatoryIgnorePatterns := []string{scoDir, ".git"}
+	mandatoryIgnorePatterns := []string{scoDir, ".git", "*___jb_*"}
 	ignorePatterns := append(mandatoryIgnorePatterns, getIgnorePatterns()...)
 
 	log.Println("Using following ignore patterns: ", ignorePatterns)
@@ -35,11 +43,11 @@ func New() *Config {
 	ignoreObject, error := gitignore.CompileIgnoreLines(ignorePatterns...)
 
 	if error != nil {
-		panic("Error when compiling ignore lines: " + error.Error())
+		log.Fatal("Error when compiling ignore lines: " + error.Error())
 	}
 
 	config := Config{
-		BaseDir:           *repoPath,
+		BaseDir:           ".",
 		ScoDir:            scoDir,
 		ScoConfigFile:     "sco.json",
 		GitIgnore:         ignoreObject,

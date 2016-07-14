@@ -56,6 +56,9 @@ func (fw *FileWatcher) Start() {
 		for {
 			select {
 			case event := <-watcher.Events:
+
+				// TODO when direcetories have been created then we have to watch it!!! (important)
+
 				if !fw.config.GitIgnore.MatchesPath(event.Name) {
 					fw.eventSink <- convertFsNotifyEvent(event)
 				}
@@ -94,6 +97,7 @@ func convertFsNotifyEvent(event fsnotify.Event) *FileEvent {
 
 	var op Op
 
+	// TODO I don't think you can have several events at the same time e.g. chmod + write???
 	if event.Op&fsnotify.Chmod == fsnotify.Chmod {
 		op |= Chmod
 	}
