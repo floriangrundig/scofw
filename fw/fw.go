@@ -74,37 +74,37 @@ func (fw *FileWatcher) Start() {
 		for {
 			select {
 			case event := <-watcher.Events:
+				if !fw.config.GitIgnore.MatchesPath(event.Name) {
+					shouldEmitEvent := true
 
-				shouldEmitEvent := true
+					if event.Op&fsnotify.Create == fsnotify.Create {
+						fileInfo, err := os.Stat(event.Name)
 
-				if event.Op&fsnotify.Create == fsnotify.Create {
-					fileInfo, err := os.Stat(event.Name)
-
-					if err != nil {
-						log.Println("error", err)
-					}
-
-					if fileInfo.IsDir() {
-						walkErr := filepath.Walk(event.Name, walkFunc)
-						if walkErr != nil {
-							log.Fatal(walkErr)
+						if err != nil {
+							log.Println("error", err)
 						}
-						// TODO if there're already some file in the new folder or its subfolder then we should emit an event
-						shouldEmitEvent = false
+
+						if fileInfo.IsDir() {
+							walkErr := filepath.Walk(event.Name, walkFunc)
+							if walkErr != nil {
+								log.Fatal(walkErr)
+							}
+
+							// TODO if there're already some file in the new folder or its subfolder then we should emit an event
+							shouldEmitEvent = false
+						}
+					} else if event.Op&fsnotify.Remove == fsnotify.Remove {
+						if _, err := os.Stat(event.Name); os.IsNotExist(err) {
+							// TODO store all watches and remove watch if file.Name matches...
+							// watcher.Remove(event.Name)
+						}
+
 					}
-				} else if event.Op&fsnotify.Remove == fsnotify.Remove {
-					if _, err := os.Stat(event.Name); os.IsNotExist(err) {
 
-						// TODO store all watches and remove watch if file.Name matches...
-						// watcher.Remove(event.Name)
+					if shouldEmitEvent {
+						fw.eventSink <- convertFsNotifyEvent(event)
 					}
-
 				}
-
-				if shouldEmitEvent && !fw.config.GitIgnore.MatchesPath(event.Name) {
-					fw.eventSink <- convertFsNotifyEvent(event)
-				}
-
 			case err := <-watcher.Errors:
 				log.Println("error:", err)
 			}
