@@ -2,8 +2,21 @@
 
 TODO
 
+See problem section if you have problems to get it running.
+
+## TODO
+- Gource -> use current user (flg is hardcoded)
+- include filebeat-option to start filebeat as childprocess -> avoids two open shells
+
 ## Configuration
 Use `scofw --help` to see the list of flags and commands.
+
+## Problems
+
+1. I get an error: "Too many open files"
+- MAC: `ulimit -a` you need to increase "Max open file descriptors" -> when executing with bash it should run out of the box -> this error occurs when starting via fish or csh
+
+
 
 ## Gource
 Installing Gource on a Mac can be done with homebrew: `brew install gource`
