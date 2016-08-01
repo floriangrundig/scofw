@@ -1,13 +1,13 @@
 package main
 
 import (
-	"github.com/FlorianGrundig/scofw/config"
-	"github.com/FlorianGrundig/scofw/fw"
-	"github.com/FlorianGrundig/scofw/git"
-	gitconfig "github.com/FlorianGrundig/scofw/git/config"
-	"github.com/FlorianGrundig/scofw/publisher"
-	"github.com/FlorianGrundig/scofw/reporter"
-	"github.com/FlorianGrundig/scofw/util"
+	"github.com/floriangrundig/scofw/config"
+	"github.com/floriangrundig/scofw/fw"
+	"github.com/floriangrundig/scofw/git"
+	gitconfig "github.com/floriangrundig/scofw/git/config"
+	"github.com/floriangrundig/scofw/publisher"
+	"github.com/floriangrundig/scofw/reporter"
+	"github.com/floriangrundig/scofw/util"
 )
 
 // to statically link lib: www.petethompson.net/blog/golang/2015/10/04/getting-going-with-git2go/

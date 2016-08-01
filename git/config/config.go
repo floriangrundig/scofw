@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/FlorianGrundig/scofw/config"
+	"github.com/floriangrundig/scofw/config"
 )
 
 type GitRuntimeData struct {

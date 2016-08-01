@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/FlorianGrundig/scofw/config"
+	"github.com/floriangrundig/scofw/config"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -85,16 +85,16 @@ func (fw *FileWatcher) Start() {
 						}
 
 						go func() {
-						if fileInfo.IsDir() {
-							walkErr := filepath.Walk(event.Name, walkFunc)
-							if walkErr != nil {
-								log.Fatal(walkErr)
+							if fileInfo.IsDir() {
+								walkErr := filepath.Walk(event.Name, walkFunc)
+								if walkErr != nil {
+									log.Fatal(walkErr)
+								}
 							}
-						}
 
 							// TODO if there're already some file in the new folder or its subfolder then we should emit an event
 							shouldEmitEvent = false
-						}
+						}()
 					} else if event.Op&fsnotify.Remove == fsnotify.Remove {
 						if _, err := os.Stat(event.Name); os.IsNotExist(err) {
 							// TODO store all watches and remove watch if file.Name matches...

@@ -10,12 +10,12 @@ import (
 
 	"path/filepath"
 
-	"github.com/FlorianGrundig/scofw/config"
-	"github.com/FlorianGrundig/scofw/fw"
-	wkTree "github.com/FlorianGrundig/scofw/git"
-	gitconfig "github.com/FlorianGrundig/scofw/git/config"
-	"github.com/FlorianGrundig/scofw/publisher"
-	"github.com/FlorianGrundig/scofw/util"
+	"github.com/floriangrundig/scofw/config"
+	"github.com/floriangrundig/scofw/fw"
+	wkTree "github.com/floriangrundig/scofw/git"
+	gitconfig "github.com/floriangrundig/scofw/git/config"
+	"github.com/floriangrundig/scofw/publisher"
+	"github.com/floriangrundig/scofw/util"
 	"github.com/libgit2/git2go"
 )
 
