@@ -8,8 +8,12 @@ Use `scofw --help` to see the list of flags and commands.
 
 ## Problems
 
-1. I get an error: "Too many open files"
-- MAC: `ulimit -a` you need to increase "Max open file descriptors" -> when executing with bash it should run out of the box -> this error occurs when starting via fish or csh
+### I get an error: "Too many open files"
+MAC:
+`ulimit -a` you need to increase "Max open file descriptors" -> when executing with bash it should run out of the box -> this error occurs when starting via fish or csh.
+
+Use `lsof | wc -l` to find out the current number of open file descriptors.
+
 
 
 
