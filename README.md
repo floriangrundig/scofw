@@ -1,12 +1,7 @@
 #SCO-Filewatcher client
 
-TODO
+Unless otherwise noted, the scofw source files are distributed under the GPL-3.0 license found in the LICENSE file.
 
-See problem section if you have problems to get it running.
-
-## TODO
-- Gource -> use current user (flg is hardcoded)
-- include filebeat-option to start filebeat as childprocess -> avoids two open shells
 
 ## Configuration
 Use `scofw --help` to see the list of flags and commands.
@@ -20,6 +15,7 @@ Use `scofw --help` to see the list of flags and commands.
 
 ## Gource
 Installing Gource on a Mac can be done with homebrew: `brew install gource`
+
 
 ## Development
 
