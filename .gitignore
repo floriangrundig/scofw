@@ -1,2 +1,9 @@
 .sco
 /bin
+
+# emacs
+.#*
+*.*~
+
+# vim
+.*.*.swp

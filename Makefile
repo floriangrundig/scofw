@@ -5,7 +5,8 @@ build-go:
 		# Install go with brew install go --with-cc-all
 		# to get all compilers
 		# env GOOS="darwin" go build -o bin/scofw scofw.go
-		env GOOS="linux" GOARCH=amd64 go build -o bin/scofw_linux scofw.go
+		# env GOOS="linux" GOARCH=amd64 go build -o bin/scofw_linux scofw.go
+		go build -o bin/scofw
 
 filebeat:
 	filebeat -c filebeat.yml

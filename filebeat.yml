@@ -148,7 +148,7 @@ filebeat.prospectors:
   # Setting tail_files to true means filebeat starts reading new files at the end
   # instead of the beginning. If this is used in combination with log rotation
   # this can mean that the first entries of a new file are skipped.
-  #tail_files: false
+  tail_files: true
 
   # Backoff values define how aggressively filebeat crawls new files for updates
   # The default values can be used in most cases. Backoff defines how long it is waited
