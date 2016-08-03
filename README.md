@@ -1,19 +1,31 @@
-#SCO-Filewatcher client
+#SCO-Filewatcher
+
+SCO-Filewatcher is still pre alpha alpha alpha alpha. So there's no complete documentation yet :)
 
 Unless otherwise noted, the scofw source files are distributed under the GPL-3.0 license found in the LICENSE file.
+
+
 
 
 ## Configuration
 Use `scofw --help` to see the list of flags and commands.
 
 ### Filebeat
-Works currently only with filebeat v5.*(alpha). Have a look at the filebeat.yml located here in the project root folder.
+Works currently only with filebeat v5.(alpha). Have a look at the filebeat.yml located here in the project root folder.
 
 ## Problems
+2016/08/03 15:14:14 Watching web/templates/admin/schedule/venue
+2016/08/03 15:14:14 Received event web/templates/admin/schedule/location 12 (| rename || remove |)
+2016/08/03 15:14:14 This is the first change detected for web/templates/admin/schedule/location
+2016/08/03 15:14:14 No matching git change for file: %!s(fw.Op=12)%!(EXTRA string=web/templates/admin/schedule/location)
+2016/08/03 15:14:14 The requested type does not match the type in ODB
+make: *** [sco] Error 1
+Florians-MacBook-Pro-2:conference flg$
+
 
 ### I get an error: "Too many open files"
 MAC:
-`ulimit -a` you need to increase "Max open file descriptors" -> when executing with bash it should run out of the box -> this error occurs when starting via fish or csh.
+`ulimit -a` you need to increase "Max open file descriptors" -> when executing with bash it should run out of the box or at leat configurable via `ulimit -n 4000` -> this error occurs when starting via fish or csh.
 
 Use `lsof | wc -l` to find out the current number of open file descriptors.
 
