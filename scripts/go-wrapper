@@ -99,7 +99,9 @@ case "$cmd" in
 		;;
 
 	run)
-		set -x; exec "$goBin" "$@"
+		set -- go run "$@"
+		echo "Executing $@"
+		set -x; exec "$@"
 		;;
 
 	*)
