@@ -14,7 +14,7 @@ type GitRuntimeData struct {
 	GitCommits map[string]string
 }
 
-// TODO should we rename that struct since it's currently not observing anything - it's totally static
+// TODO rename that struct since it's currently not observing anything - it's totally static
 type WorkTreeObserver struct {
 	scoConfig          *config.Config
 	config             *gitconfig.Config

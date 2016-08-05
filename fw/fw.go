@@ -84,6 +84,7 @@ func (fw *FileWatcher) Start() {
 							log.Println("error", err)
 						}
 
+						// whenever a new directory was created we need to watch its content too
 						go func() {
 							if fileInfo.IsDir() {
 								walkErr := filepath.Walk(event.Name, walkFunc)
@@ -125,7 +126,6 @@ func convertFsNotifyEvent(event fsnotify.Event) *FileEvent {
 
 	var op Op
 
-	// TODO I don't think you can have several events at the same time e.g. chmod + write???
 	if event.Op&fsnotify.Chmod == fsnotify.Chmod {
 		op |= Chmod
 	}

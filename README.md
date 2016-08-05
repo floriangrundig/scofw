@@ -5,13 +5,13 @@ SCO-Filewatcher is still pre alpha alpha alpha alpha. So there's no complete doc
 Unless otherwise noted, the scofw source files are distributed under the GPL-3.0 license found in the LICENSE file.
 
 
-
-
 ## Configuration
 Use `scofw --help` to see the list of flags and commands.
 
+
 ### Filebeat
 Works currently only with filebeat v5.(alpha). Have a look at the filebeat.yml located here in the project root folder.
+
 
 ## Problems
 2016/08/03 15:14:14 Watching web/templates/admin/schedule/venue
@@ -30,8 +30,6 @@ MAC:
 Use `lsof | wc -l` to find out the current number of open file descriptors.
 
 
-
-
 ## Gource
 Installing Gource on a Mac can be done with homebrew: `brew install gource`
 
@@ -44,7 +42,9 @@ Use `make run` to run the application with default settings
 
 Use `go run scofw.go --help` to list of flags...
 
+
 ### Building binaries
+
 #### Ubuntu
 apt-get install -y pkg-config cmake
 go get -d github.com/libgit2/git2go
@@ -55,6 +55,7 @@ make install
 
 cd /usr/src/myapp
 go build -o bin/scofw_linux scofw.go
+
 ### Add new vendor packages as dependency
 We use https://github.com/kardianos/govendor to store our dependencies within the project
 

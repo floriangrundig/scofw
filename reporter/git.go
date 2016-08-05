@@ -19,6 +19,7 @@ import (
 	"github.com/libgit2/git2go"
 )
 
+// TODO rename that struct
 type GitReporter struct {
 	config                    *config.Config
 	gitConfig                 *gitconfig.Config
@@ -133,7 +134,8 @@ func (gr *GitReporter) Start() {
 				break
 			}
 
-			gr.observer.UpdateCurrentScoSession() // since we currently are not able to detect a commit we have to call update manually
+			// since we currently are not able to detect a commit we have to sync with current work tree manually
+			gr.observer.UpdateCurrentScoSession()
 
 			// flg: I don't know why but when editing with atom editor lot's of chmod-events are triggered - we're not interested in those
 			if event.Op != fw.Chmod {
@@ -195,6 +197,18 @@ func verifyNoError(err error) {
 
 }
 
+func joinFilePaths(p1, p2 string) string {
+
+	if p1 == "." {
+		return p2
+	}
+	if p2 == "." {
+		return p1
+	}
+	return filepath.Join(p1, p2)
+}
+
+// TODO this function should go into its own package because its the only function which is really tied to git
 func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 	log.Println("This is the first change detected for", event.Name)
 
@@ -269,7 +283,7 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 
 	if !contentDeltaDetermined {
 
-		log.Printf("No matching git change for file: %s", event.Op, event.Name)
+		log.Printf("No matching git change for file: %s", event.Name)
 
 		_, err := commitTree.EntryByPath(event.Name)
 		if err == nil {
@@ -333,7 +347,15 @@ func (gr *GitReporter) storeLastChange(event *fw.FileEvent) {
 }
 
 func (gr *GitReporter) getOriginalBlob(commitTree *git.Tree, event *fw.FileEvent) *git.Blob {
-	treeEntry, err := commitTree.EntryByPath(event.Name)
+	var path string
+	// under linux files in the root directory are reported as ./filename which is an invalid git tree path -> we have to remove the "./"
+	if filepath.Dir(path) == "." {
+		path = filepath.Base(event.Name)
+	} else {
+		path = event.Name
+	}
+
+	treeEntry, err := commitTree.EntryByPath(path)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -357,7 +379,7 @@ func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange uint32) {
 	options.IdAbbrev = 40
 	options.Flags |= git.DiffIncludeUntracked
 
-	baseFolder := filepath.Join("diffs", gr.gitConfig.CurrentScoSession, filepath.Dir(event.Name))
+	baseFolder := filepath.Join("diffs", joinFilePaths(gr.gitConfig.CurrentScoSession, filepath.Dir(event.Name)))
 	baseFile := filepath.Join(baseFolder, filepath.Base(event.Name))
 
 	var contentA *[]byte
