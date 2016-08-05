@@ -14,14 +14,6 @@ Works currently only with filebeat v5.(alpha). Have a look at the filebeat.yml l
 
 
 ## Problems
-2016/08/03 15:14:14 Watching web/templates/admin/schedule/venue
-2016/08/03 15:14:14 Received event web/templates/admin/schedule/location 12 (| rename || remove |)
-2016/08/03 15:14:14 This is the first change detected for web/templates/admin/schedule/location
-2016/08/03 15:14:14 No matching git change for file: %!s(fw.Op=12)%!(EXTRA string=web/templates/admin/schedule/location)
-2016/08/03 15:14:14 The requested type does not match the type in ODB
-make: *** [sco] Error 1
-Florians-MacBook-Pro-2:conference flg$
-
 
 ### I get an error: "Too many open files"
 MAC:
