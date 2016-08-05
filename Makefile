@@ -3,6 +3,9 @@ CURRENT_DIRECTORY="$(shell pwd)"
 run:
 	go run scofw.go
 
+linux-bash:
+	docker run -it --rm -v $(CURRENT_DIRECTORY):/usr/src/myapp -w /usr/src/myapp scofw-golang:1.6 bash
+
 run-linux:
 	docker run -it --rm -v $(CURRENT_DIRECTORY):/usr/src/myapp -w /usr/src/myapp scofw-golang:1.6 go-wrapper run scofw.go
 
