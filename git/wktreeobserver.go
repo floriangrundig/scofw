@@ -2,12 +2,16 @@ package wktreeobserver
 
 import (
 	"fmt"
-	"log"
+	log_ "log"
 
 	"github.com/floriangrundig/scofw/config"
 	gitconfig "github.com/floriangrundig/scofw/git/config"
 	"github.com/libgit2/git2go"
 	"github.com/satori/go.uuid"
+)
+
+var (
+	log *log_.Logger
 )
 
 type GitRuntimeData struct {
@@ -24,7 +28,7 @@ type WorkTreeObserver struct {
 }
 
 func New(config *config.Config, gitConfig *gitconfig.Config) *WorkTreeObserver {
-
+	log = config.Logger
 	repo, err := git.OpenRepository(config.BaseDir)
 	if err != nil {
 		log.Fatal(err)

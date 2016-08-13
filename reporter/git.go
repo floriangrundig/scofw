@@ -2,7 +2,7 @@ package gitReporter
 
 import (
 	"fmt"
-	"log"
+	log_ "log"
 	"os"
 	"strings"
 
@@ -19,6 +19,10 @@ import (
 	"github.com/libgit2/git2go"
 )
 
+var (
+	log *log_.Logger
+)
+
 // TODO rename that struct
 type GitReporter struct {
 	config                    *config.Config
@@ -32,6 +36,7 @@ type GitReporter struct {
 
 func New(config *config.Config, gitConfig *gitconfig.Config, util *util.Util, observer *wkTree.WorkTreeObserver, fileEventChannel chan *fw.FileEvent, fileChangedMessageChannel chan *publisher.Message) *GitReporter {
 
+	log = config.Logger
 	// the default fw-engine uses git
 	// there might be some other engines which don't need git
 	// in the latter case we should make the engine configurable via cli params
@@ -296,7 +301,7 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 		}
 
 		if event.Op&fw.Remove != fw.Remove {
-			fmt.Println("not a removal")
+			log.Println("not a removal")
 			if _, err := os.Stat(event.Name); os.IsNotExist(err) {
 				contentB = emptyContent
 			} else {

@@ -2,13 +2,16 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"log"
+	log_ "log"
 	"os"
 	"path/filepath"
 
 	"github.com/floriangrundig/scofw/config"
+)
+
+var (
+	log *log_.Logger // our logger
 )
 
 type GitRuntimeData struct {
@@ -24,7 +27,7 @@ type Config struct {
 }
 
 func New(config *config.Config) *Config {
-
+	log = config.Logger
 	gitConfig := Config{
 		scoConfig:          config,
 		gitRuntimeDataFile: filepath.Join(config.ScoDir, "commits_sessions.json"),
@@ -44,12 +47,12 @@ func New(config *config.Config) *Config {
 func (config *Config) Persist() {
 	b, err := json.MarshalIndent(&config.GitRuntimeData, "", "  ")
 	if err != nil {
-		fmt.Println("error:", err)
+		log.Println("error:", err)
 	}
 
 	err = ioutil.WriteFile(config.gitRuntimeDataFile, b, config.scoConfig.ScoDirPermissions)
 	if err != nil {
-		fmt.Println("error:", err)
+		log.Println("error:", err)
 	}
 
 }

@@ -2,7 +2,7 @@ package config
 
 import (
 	"bufio"
-	"log"
+	log_ "log"
 	"os"
 
 	gitignore "github.com/sabhiram/go-git-ignore"
@@ -13,6 +13,8 @@ type Config struct {
 	BaseDir           string
 	ScoDir            string
 	ScoConfigFile     string
+	VerboseOutput     bool
+	Logger            *log_.Logger
 	GitIgnore         *gitignore.GitIgnore // TODO rename into something git agnostiv like FileIgnore
 	ScoDirPermissions os.FileMode
 }
@@ -21,10 +23,18 @@ var (
 	repoPath = kingpin.Flag("path", "Path to reposiory to watch.").Default(".").String()
 	// TODO we should add one flag to add a list of ignore patterns from command line e.g. -ignore="out target"
 	scoIgnorePath = kingpin.Flag("ignoreFile", "Path to ignore file.").Default(".gitignore").String()
+	Verbose       = kingpin.Flag("verbose", "Verbose mode.").Short('v').Bool()
+	log           *log_.Logger
 )
 
-func New() *Config {
+func GetVerboseLoggingFlag() bool {
+	log_.Println("verbose flag: ", *Verbose)
+	return *Verbose
+}
+
+func New(scoDir string, logger *log_.Logger) *Config {
 	kingpin.Parse()
+	log = logger
 
 	error := os.Chdir(*repoPath)
 	if error != nil {
@@ -32,8 +42,6 @@ func New() *Config {
 	}
 
 	log.Println("Changing current workdir to ", *repoPath)
-
-	scoDir := ".sco"
 
 	mandatoryIgnorePatterns := []string{scoDir, ".git", "*___jb_*"}
 	ignorePatterns := append(mandatoryIgnorePatterns, getIgnorePatterns()...)
@@ -52,6 +60,8 @@ func New() *Config {
 		ScoConfigFile:     "sco.json",
 		GitIgnore:         ignoreObject,
 		ScoDirPermissions: 0700,
+		VerboseOutput:     *Verbose,
+		Logger:            log,
 	}
 
 	// create sco internal directory

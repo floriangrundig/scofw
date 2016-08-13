@@ -3,11 +3,15 @@ package util
 import (
 	"io"
 	"io/ioutil"
-	"log"
+	log_ "log"
 	"os"
 	"path/filepath"
 
 	"github.com/floriangrundig/scofw/config"
+)
+
+var (
+	log *log_.Logger
 )
 
 type Util struct {
@@ -15,6 +19,7 @@ type Util struct {
 }
 
 func New(config *config.Config) *Util {
+	log = config.Logger
 	return &Util{
 		config: config,
 	}

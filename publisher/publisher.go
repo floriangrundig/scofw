@@ -3,7 +3,7 @@ package publisher
 import (
 	"fmt"
 	"io"
-	"log"
+	log_ "log"
 	"os"
 	"path/filepath"
 	"time"
@@ -12,6 +12,10 @@ import (
 	"github.com/floriangrundig/scofw/fw"
 	gitconfig "github.com/floriangrundig/scofw/git/config"
 	"github.com/floriangrundig/scofw/util"
+)
+
+var (
+	log *log_.Logger
 )
 
 type Message struct {
@@ -27,7 +31,8 @@ type Publisher struct {
 }
 
 func New(config *config.Config, gitConfig *gitconfig.Config, util *util.Util, fileChangedMessageChannel chan *Message) *Publisher {
-	fmt.Println("Creating Publisher...")
+	log = config.Logger
+	log.Println("Creating Publisher...")
 
 	util.CreateScoFolder("logs")
 
@@ -70,9 +75,15 @@ func (publisher *Publisher) log(msg *Message) {
 
 	defer file.Close()
 
-	multi := io.MultiWriter(file, os.Stdout)
+	var writer io.Writer
 
-	mylog := log.New(multi, "", log.Ldate|log.Ltime)
+	if publisher.config.VerboseOutput {
+		writer = io.MultiWriter(file, os.Stdout)
+	} else {
+		writer = io.Writer(file)
+	}
+
+	mylog := log_.New(writer, "", log_.Ldate|log_.Ltime)
 	mylog.Println(*msg.Patch)
 
 }

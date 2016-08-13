@@ -1,12 +1,16 @@
 package fw
 
 import (
-	"log"
+	log_ "log"
 	"os"
 	"path/filepath"
 
 	"github.com/floriangrundig/scofw/config"
 	"github.com/fsnotify/fsnotify"
+)
+
+var (
+	log *log_.Logger
 )
 
 // The types Event and Op and the Op-constants were copied from the fsnotify.go -> we wrap them here
@@ -35,6 +39,7 @@ type FileWatcher struct {
 }
 
 func New(config *config.Config, eventSink chan *FileEvent) *FileWatcher {
+	log = config.Logger
 	return &FileWatcher{
 		config:    config,
 		eventSink: eventSink,
