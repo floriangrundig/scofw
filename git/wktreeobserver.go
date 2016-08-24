@@ -29,7 +29,7 @@ type WorkTreeObserver struct {
 
 func New(config *config.Config, gitConfig *gitconfig.Config) *WorkTreeObserver {
 	log = config.Logger
-	repo, err := git.OpenRepository(config.BaseDir)
+	repo, err := git.OpenRepository(config.ProjectDir)
 	if err != nil {
 		log.Fatal(err)
 	}

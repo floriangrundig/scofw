@@ -47,84 +47,94 @@ func New(config *config.Config, eventSink chan *FileEvent) *FileWatcher {
 }
 
 func (fw *FileWatcher) Start() {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Println("Error while creating file watcher")
-		log.Fatal(err)
-	}
-
-	log.Println("Watching directory: " + fw.config.BaseDir)
-	defer watcher.Close()
-
-	walkFunc := func(path string, info os.FileInfo, err error) error {
-
-		if err == nil {
-			if info.IsDir() && !fw.config.GitIgnore.MatchesPath(path) {
-				log.Println("Watching", path)
-				err = watcher.Add(path)
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
-		} else {
-			log.Println("Error while walking through directory tree in workspace", err)
-		}
-
-		return nil
-	}
-
-	done := make(chan bool)
 
 	go func() {
-		for {
-			select {
-			case event := <-watcher.Events:
-				if !fw.config.GitIgnore.MatchesPath(event.Name) {
-					shouldEmitEvent := true
+		done := make(chan bool)
 
-					if event.Op&fsnotify.Create == fsnotify.Create {
-						fileInfo, err := os.Stat(event.Name)
+		watcher, err := fsnotify.NewWatcher()
+		if err != nil {
+			log.Println("Error while creating file watcher")
+			log.Fatal(err)
+		}
 
-						if err != nil {
-							log.Println("error", err)
-						}
+		log.Println("Watching directory: " + fw.config.ProjectDir)
+		defer watcher.Close()
 
-						// whenever a new directory was created we need to watch its content too
-						go func() {
-							if fileInfo.IsDir() {
-								walkErr := filepath.Walk(event.Name, walkFunc)
-								if walkErr != nil {
-									log.Fatal(walkErr)
-								}
-							}
+		walkFunc := func(path string, info os.FileInfo, err error) error {
 
-							// TODO if there're already some file in the new folder or its subfolder then we should emit an event
-							shouldEmitEvent = false
-						}()
-					} else if event.Op&fsnotify.Remove == fsnotify.Remove {
-						if _, err := os.Stat(event.Name); os.IsNotExist(err) {
-							// TODO store all watches and remove watch if file.Name matches...
-							// watcher.Remove(event.Name)
-						}
-
-					}
-
-					if shouldEmitEvent {
-						fw.eventSink <- convertFsNotifyEvent(event)
+			if err == nil {
+				if info.IsDir() && !fw.config.GitIgnore.MatchesPath(path) {
+					log.Println("Watching", path)
+					err = watcher.Add(path)
+					if err != nil {
+						log.Fatal(err)
 					}
 				}
-			case err := <-watcher.Errors:
-				log.Println("error:", err)
+			} else {
+				log.Println("Error while walking through directory tree in workspace", err)
 			}
+
+			return nil
 		}
+
+		go func() {
+			for {
+				select {
+				case event, more := <-watcher.Events:
+
+					if !more {
+						return
+					}
+
+					if !fw.config.GitIgnore.MatchesPath(event.Name) {
+						shouldEmitEvent := true
+
+						if event.Op&fsnotify.Create == fsnotify.Create {
+							fileInfo, err := os.Stat(event.Name)
+
+							if err != nil {
+								log.Println("error", err)
+							}
+
+							// whenever a new directory was created we need to watch its content too
+							go func() {
+								if fileInfo.IsDir() {
+									walkErr := filepath.Walk(event.Name, walkFunc)
+									if walkErr != nil {
+										log.Fatal(walkErr)
+									}
+								}
+
+								// TODO if there're already some file in the new folder or its subfolder then we should emit an event
+								shouldEmitEvent = false
+							}()
+						} else if event.Op&fsnotify.Remove == fsnotify.Remove {
+							if _, err := os.Stat(event.Name); os.IsNotExist(err) {
+								// TODO store all watches and remove watch if file.Name matches...
+								// watcher.Remove(event.Name)
+							}
+
+						}
+
+						if shouldEmitEvent {
+							fw.eventSink <- convertFsNotifyEvent(event)
+						}
+					}
+				case err, more := <-watcher.Errors:
+					log.Println("File watcher error:", err, more)
+				}
+			}
+		}()
+
+		walkErr := filepath.Walk(fw.config.ProjectDir, walkFunc)
+		if walkErr != nil {
+			log.Fatal(walkErr)
+		}
+
+		<-done
+
 	}()
 
-	walkErr := filepath.Walk(fw.config.BaseDir, walkFunc)
-	if walkErr != nil {
-		log.Fatal(walkErr)
-	}
-
-	<-done
 }
 
 func convertFsNotifyEvent(event fsnotify.Event) *FileEvent {

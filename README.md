@@ -18,6 +18,7 @@ Works currently only with filebeat v5.(alpha). Have a look at the filebeat.yml l
 ### I get an error: "Too many open files"
 MAC:
 `ulimit -a` you need to increase "Max open file descriptors" -> when executing with bash it should run out of the box or at leat configurable via `ulimit -n 4000` -> this error occurs when starting via fish or csh.
+Example how to increase: `sysctl -w kern.maxfilesperproc=20000` 
 
 Use `lsof | wc -l` to find out the current number of open file descriptors.
 

@@ -27,6 +27,12 @@
 			"revisionTime": "2016-04-12T13:37:56Z"
 		},
 		{
+			"checksumSHA1": "AXacfEchaUqT5RGmPmMXsOWRhv8=",
+			"path": "github.com/mitchellh/go-homedir",
+			"revision": "756f7b183b7ab78acdbbee5c7f392838ed459dda",
+			"revisionTime": "2016-06-21T17:42:43Z"
+		},
+		{
 			"checksumSHA1": "Q/nYYlFQ4xjQCi94L/Z4/uGLLOs=",
 			"path": "github.com/sabhiram/go-git-ignore",
 			"revision": "228fcfa2a06e870a3ef238d54c45ea847f492a37",
@@ -56,6 +62,10 @@
 		},
 		{
 			"path": "https://github.com/floriangrundig/go-diff",
+			"revision": ""
+		},
+		{
+			"path": "https://github.com/mitchellh/go-homedir",
 			"revision": ""
 		}
 	],

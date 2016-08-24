@@ -25,6 +25,7 @@ var (
 
 // TODO rename that struct
 type GitReporter struct {
+	home                      string
 	config                    *config.Config
 	gitConfig                 *gitconfig.Config
 	repo                      *git.Repository
@@ -34,18 +35,19 @@ type GitReporter struct {
 	fileChangedMessageChannel chan *publisher.Message
 }
 
-func New(config *config.Config, gitConfig *gitconfig.Config, util *util.Util, observer *wkTree.WorkTreeObserver, fileEventChannel chan *fw.FileEvent, fileChangedMessageChannel chan *publisher.Message) *GitReporter {
+func New(config *config.Config, gitConfig *gitconfig.Config, util *util.Util, observer *wkTree.WorkTreeObserver, fileEventChannel chan *fw.FileEvent, fileChangedMessageChannel chan *publisher.Message, home string) *GitReporter {
 
 	log = config.Logger
 	// the default fw-engine uses git
 	// there might be some other engines which don't need git
 	// in the latter case we should make the engine configurable via cli params
-	repo, err := git.OpenRepository(config.BaseDir)
+	repo, err := git.OpenRepository(config.ProjectDir)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	return &GitReporter{
+		home:                      home,
 		config:                    config,
 		gitConfig:                 gitConfig,
 		repo:                      repo,
@@ -314,7 +316,9 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 	}
 
 	// TODO if event.Name referes to a new file -> the patch contains "new file mode 100644" -> we should change the file mode to the original settings
-	patch, err := gr.repo.PatchFromBuffers(event.Name, event.Name, contentA, contentB, &options)
+	oldPath := gr.toProjectRelativePath(event.Name)
+	newPath := gr.toProjectRelativePath(event.Name)
+	patch, err := gr.repo.PatchFromBuffers(oldPath, newPath, contentA, contentB, &options)
 	defer patch.Free()
 	verifyNoError(err)
 	patchString, err := patch.String()
@@ -338,6 +342,16 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 	gr.storeLastChange(event)
 }
 
+func (gr *GitReporter) toProjectRelativePath(path string) string {
+	// TODO add teh
+	relativePath, err := filepath.Rel(gr.config.ProjectDir, path)
+	if err != nil {
+		log.Println("Error while transforming project directory into relative directory:", err)
+	}
+
+	return relativePath
+}
+
 func (gr *GitReporter) storeLastChange(event *fw.FileEvent) {
 	lastChanges, anyChangesForSession := gr.gitConfig.LastChanges[gr.gitConfig.CurrentScoSession]
 
@@ -352,14 +366,14 @@ func (gr *GitReporter) storeLastChange(event *fw.FileEvent) {
 }
 
 func (gr *GitReporter) getOriginalBlob(commitTree *git.Tree, event *fw.FileEvent) *git.Blob {
-	var path string
-	// under linux files in the root directory are reported as ./filename which is an invalid git tree path -> we have to remove the "./"
-	if filepath.Dir(path) == "." {
-		path = filepath.Base(event.Name)
-	} else {
-		path = event.Name
-	}
+	path := gr.toProjectRelativePath(event.Name) // event.Name is an absolute path
 
+	// under linux files in the root directory are reported as ./filename which is an invalid git tree path -> we have to remove the "./"
+	// if filepath.Dir(path) == "." {
+	// path = filepath.Base(path)
+	// }
+
+	log.Println("Looking in commit tree for ", path)
 	treeEntry, err := commitTree.EntryByPath(path)
 	if err != nil {
 		log.Fatal(err)
@@ -414,7 +428,9 @@ func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange uint32) {
 	}
 
 	// TODO if event.Name referes to a new file -> the patch contains "new file mode 100644" -> we should change the file mode to the original settings
-	patch, err := gr.repo.PatchFromBuffers(event.Name, event.Name, *contentA, contentB, &options)
+	oldPath := gr.toProjectRelativePath(event.Name)
+	newPath := gr.toProjectRelativePath(event.Name)
+	patch, err := gr.repo.PatchFromBuffers(oldPath, newPath, *contentA, contentB, &options)
 	defer patch.Free()
 	verifyNoError(err)
 	patchString, err := patch.String()
