@@ -45,10 +45,6 @@
 			"revisionTime": "2016-06-07T14:43:47Z"
 		},
 		{
-			"path": "golang.org/x/sys/kqueue",
-			"revision": ""
-		},
-		{
 			"checksumSHA1": "w/oQQFHCnE+S+2g5D62nfY8aDuQ=",
 			"path": "golang.org/x/sys/unix",
 			"revision": "62bee037599929a6e9146f29d10dd5208c43507d",
@@ -59,14 +55,6 @@
 			"path": "gopkg.in/alecthomas/kingpin.v2",
 			"revision": "8cccfa8eb2e3183254457fb1749b2667fbc364c7",
 			"revisionTime": "2016-02-17T09:03:01Z"
-		},
-		{
-			"path": "https://github.com/floriangrundig/go-diff",
-			"revision": ""
-		},
-		{
-			"path": "https://github.com/mitchellh/go-homedir",
-			"revision": ""
 		}
 	],
 	"rootPath": "github.com/floriangrundig/scofw"

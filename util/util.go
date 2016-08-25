@@ -44,7 +44,7 @@ func New(config *config.Config) *Util {
 	}
 }
 
-// TODO rename - since it creates a sco internal folder
+// TODO rename - since it creates a folder in the sco internal folder
 func (util *Util) CreateScoFolder(pathElements ...string) {
 	file := filepath.Join(util.config.ScoDir, filepath.Join(pathElements...))
 	if _, err := os.Stat(file); os.IsNotExist(err) {

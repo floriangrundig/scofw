@@ -4,6 +4,7 @@ SCO-Filewatcher is still pre alpha alpha alpha alpha. So there's no complete doc
 
 Unless otherwise noted, the scofw source files are distributed under the GPL-3.0 license found in the LICENSE file.
 
+TODO documentation
 
 ## Configuration
 Use `scofw --help` to see the list of flags and commands.

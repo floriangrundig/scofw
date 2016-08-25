@@ -31,6 +31,9 @@ RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
 # prepare for static linking
 RUN go get -d github.com/libgit2/git2go
+RUN go get -u github.com/kardianos/govendor
+RUN go get github.com/mitchellh/go-homedir
+
 WORKDIR $GOPATH/src/github.com/libgit2/git2go
 RUN git checkout next
 RUN git submodule update --init # get libgit2

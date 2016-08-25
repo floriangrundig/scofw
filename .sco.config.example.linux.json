@@ -1,0 +1,17 @@
+{
+    "projects" : [
+        {
+            "name" : "scofw",
+            "path" : "/usr/src/myapp",
+            "ignoreFiles":[
+                "/usr/src/myapp/.gitignore"
+            ],
+            "scoDir" : "/usr/src/myapp/.sco"
+        }
+    ],
+
+    "ignorePatterns" : [
+        ".idea",
+        ".DS_Store" 
+    ]      
+}
