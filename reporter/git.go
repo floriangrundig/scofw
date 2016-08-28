@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 
 	"path/filepath"
+	"time"
 
 	"github.com/floriangrundig/scofw/config"
 	"github.com/floriangrundig/scofw/fw"
@@ -148,16 +149,15 @@ func (gr *GitReporter) Start() {
 			if event.Op != fw.Chmod {
 
 				log.Printf("Received event %s %d (%s)\n", event.Name, event.Op, FileEventToString(event))
-				lastChanges, anyChangesForSession := gr.gitConfig.LastChanges[gr.gitConfig.CurrentScoSession]
+				session, anyChangesForSession := gr.gitConfig.Sessions[gr.gitConfig.CurrentScoSession]
 
 				var alreadyTracked bool
-				var lastChange uint32
+				var lastChanges []gitconfig.FileModificationInfo
 
 				if !anyChangesForSession {
 					alreadyTracked = false
 				} else {
-
-					lastChange, alreadyTracked = lastChanges[event.Name]
+					lastChanges, alreadyTracked = session.Modifications[gr.toProjectRelativePath(event.Name)]
 				}
 
 				// TODO if we receive a delete on a folder we have to deal with it -> e.g. deleting all files we know of (even files we don't know -> they not tracked but they should be listed in the git tracking...)
@@ -165,10 +165,10 @@ func (gr *GitReporter) Start() {
 				if !alreadyTracked {
 					gr.handleFirstChange(event)
 				} else {
+					lastChange := lastChanges[len(lastChanges)-1]
 					gr.handleChange(event, lastChange)
 				}
 			}
-
 		}
 	}()
 }
@@ -216,6 +216,7 @@ func joinFilePaths(p1, p2 string) string {
 }
 
 // TODO this function should go into its own package because its the only function which is really tied to git
+// TODO function too long
 func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 	log.Println("This is the first change detected for", event.Name)
 
@@ -353,15 +354,25 @@ func (gr *GitReporter) toProjectRelativePath(path string) string {
 }
 
 func (gr *GitReporter) storeLastChange(event *fw.FileEvent) {
-	lastChanges, anyChangesForSession := gr.gitConfig.LastChanges[gr.gitConfig.CurrentScoSession]
+	session, anyChangesForSession := gr.gitConfig.Sessions[gr.gitConfig.CurrentScoSession]
 
+	fileName := gr.toProjectRelativePath(event.Name)
 	if !anyChangesForSession {
-		gr.gitConfig.LastChanges[gr.gitConfig.CurrentScoSession] = make(map[string]uint32)
+		sessionData := gitconfig.SessionData{
+			FirstModificationDate: time.Now(),
+			Modifications:         make(map[string][]gitconfig.FileModificationInfo),
+		}
+		gr.gitConfig.Sessions[gr.gitConfig.CurrentScoSession] = sessionData
 	}
 
-	lastChanges, _ = gr.gitConfig.LastChanges[gr.gitConfig.CurrentScoSession]
+	session, _ = gr.gitConfig.Sessions[gr.gitConfig.CurrentScoSession]
 
-	lastChanges[event.Name] = uint32(event.Op)
+	modifications := session.Modifications[fileName]
+	newModification := gitconfig.FileModificationInfo{
+		Op:   uint32(event.Op),
+		Date: time.Now(),
+	}
+	session.Modifications[fileName] = append(modifications, newModification)
 	gr.gitConfig.Persist()
 }
 
@@ -387,7 +398,7 @@ func (gr *GitReporter) getOriginalBlob(commitTree *git.Tree, event *fw.FileEvent
 	return blob
 }
 
-func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange uint32) {
+func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange gitconfig.FileModificationInfo) {
 	log.Println("This is a change detected for", event.Name)
 
 	options, err := git.DefaultDiffOptions()
@@ -405,7 +416,7 @@ func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange uint32) {
 	var contentB []byte
 	emptyContent := []byte("")
 
-	if lastChange&uint32(fw.Remove) != uint32(fw.Remove) { // TODO: how to handle renamed files? (Beware -> IntelliJ stores the changes in a tmp file and renames that tmp file to the current file)
+	if lastChange.Op&uint32(fw.Remove) != uint32(fw.Remove) { // TODO: how to handle renamed files? (Beware -> IntelliJ stores the changes in a tmp file and renames that tmp file to the current file)
 		log.Printf("Comparing current %s with last snapshot %s\n", event.Name, baseFile)
 		contentA, err = gr.util.ReadScoFile(baseFile)
 		verifyNoError(err)

@@ -99,7 +99,7 @@ func (publisher *Publisher) logInGourceFormat(msg *Message) {
 
 	defer file.Close()
 
-	text := fmt.Sprintf("%v|flg|%s|%s\n", int32(time.Now().Unix()), fileEventToString(msg.FileEvent), string(msg.FileEvent.Name))
+	text := fmt.Sprintf("%v|Trifork|%s|%s\n", int32(time.Now().Unix()), fileEventToString(msg.FileEvent), string(msg.FileEvent.Name))
 
 	if _, err = file.WriteString(text); err != nil {
 		panic(err)

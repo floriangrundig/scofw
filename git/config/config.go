@@ -6,6 +6,7 @@ import (
 	log_ "log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/floriangrundig/scofw/config"
 )
@@ -14,9 +15,20 @@ var (
 	log *log_.Logger // our logger
 )
 
+type FileModificationInfo struct {
+	Op   uint32
+	Date time.Time
+}
+
+type SessionData struct {
+	FirstModificationDate time.Time
+	Modifications         map[string][]FileModificationInfo
+}
+
 type GitRuntimeData struct {
-	GitCommits  map[string]string
-	LastChanges map[string]map[string]uint32
+	CurrentScoSession string
+	GitCommits        map[string]string
+	Sessions          map[string]SessionData
 }
 
 type Config struct {
@@ -59,10 +71,12 @@ func (config *Config) Persist() {
 
 func (config *Config) setGitRuntimeData(rt GitRuntimeData) {
 	config.GitRuntimeData = rt
+
 }
 
 func (config *Config) SetCurrentScoSession(session string) {
-	config.CurrentScoSession = session
+	config.CurrentScoSession = session                // in memory
+	config.GitRuntimeData.CurrentScoSession = session // in Json
 }
 
 func (config *Config) gitRuntimeDataFileExists() bool {
@@ -93,8 +107,8 @@ func (config *Config) initializeGitRuntimeDataFile() {
 	file := config.gitRuntimeDataFile
 
 	gitRuntimeData := GitRuntimeData{
-		GitCommits:  make(map[string]string),
-		LastChanges: make(map[string]map[string]uint32),
+		GitCommits: make(map[string]string),
+		Sessions:   make(map[string]SessionData),
 	}
 
 	b, err := json.MarshalIndent(gitRuntimeData, "", "  ")

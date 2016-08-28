@@ -49,22 +49,22 @@ func (observer *WorkTreeObserver) Start() {
 func (observer *WorkTreeObserver) UpdateCurrentScoSession() {
 
 	// TODO it would be nice if we detect a new ref automatically
-	// TODO handle bare repositories
+	// TODO handle bare repositories (#10)
 	ref, err := observer.repo.Head() // TODO is this really what we've checked out?
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	parent := fmt.Sprint(ref.Target())
+	target := fmt.Sprint(ref.Target())
 	// log.Println("Current work tree:", parent)
 
-	if !observer.hasMappingToCurrentGitCommit(parent) {
-		newSession := observer.createNewMappingToCurrentGitCommit(parent)
+	if !observer.hasMappingToCurrentGitCommit(target) {
+		newSession := observer.createNewMappingToCurrentGitCommit(target)
 		log.Println("Creating new session for current work tree:", newSession)
 		observer.config.SetCurrentScoSession(newSession)
 		observer.config.Persist()
 	} else {
-		session := observer.getCurrentSession(parent)
+		session := observer.getCurrentSession(target)
 		observer.config.SetCurrentScoSession(session)
 		// log.Println("Continue with session:", session)
 	}

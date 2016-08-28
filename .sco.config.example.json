@@ -7,21 +7,9 @@
                 "/Users/flg/go/scofw/.gitignore"
             ],
             "scoDir" : "/Users/flg/go/scofw/.sco"
-        },
-        {
-            "name" : "scoLocalDevServer",
-            "path" : "/Users/flg/go/scoLocalDevServer",
-            "ignoreFiles":[
-                "/Users/flg/go/scoLocalDevServer/.gitignore"
-            ]
-        },
-        {
-            "name" : "scoKafkaGource",
-            "path" : "/Users/flg/go/scoKafkaGource",
-            "ignoreFiles":[
-            ]
         }
     ],
+
 
     "ignorePatterns" : [
         ".idea",
