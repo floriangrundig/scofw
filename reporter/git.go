@@ -256,6 +256,7 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 
 	var contentDeltaDetermined bool
 
+	// find the delta for our changed file
 	for d := 0; d < numDeltas; d++ {
 
 		delta, err := gitDiff.GetDelta(d)

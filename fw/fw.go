@@ -63,7 +63,8 @@ func (fw *FileWatcher) Start() {
 		walkFunc := func(path string, info os.FileInfo, err error) error {
 
 			if err == nil {
-				if info.IsDir() && !fw.config.GitIgnore.MatchesPath(path) {
+				if info.IsDir() && !fw.config.GitIgnore.MatchesPath(fw.toProjectRelativePath(path)) {
+					log.Println("Checking path", path, fw.toProjectRelativePath(path))
 					log.Println("Watching", path)
 					err = watcher.Add(path)
 					if err != nil {
@@ -73,7 +74,6 @@ func (fw *FileWatcher) Start() {
 			} else {
 				log.Println("Error while walking through directory tree in workspace", err)
 			}
-
 			return nil
 		}
 
@@ -135,6 +135,17 @@ func (fw *FileWatcher) Start() {
 
 	}()
 
+}
+
+// TODO use util function
+func (fw *FileWatcher) toProjectRelativePath(path string) string {
+	// TODO add teh
+	relativePath, err := filepath.Rel(fw.config.ProjectDir, path)
+	if err != nil {
+		log.Println("Error while transforming project directory into relative directory:", err)
+	}
+
+	return relativePath
 }
 
 func convertFsNotifyEvent(event fsnotify.Event) *FileEvent {

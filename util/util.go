@@ -56,6 +56,16 @@ func (util *Util) CreateScoFolder(pathElements ...string) {
 	}
 }
 
+func (util *Util) toProjectRelativePath(path string) string {
+	// TODO add teh
+	relativePath, err := filepath.Rel(util.config.ProjectDir, path)
+	if err != nil {
+		log.Println("Error while transforming project directory into relative directory:", err)
+	}
+
+	return relativePath
+}
+
 func (util *Util) ReadScoFile(pathElements ...string) (*[]byte, error) {
 	file := filepath.Join(util.config.ScoDir, filepath.Join(pathElements...))
 

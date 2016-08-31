@@ -21,7 +21,7 @@ type GlobalConfig struct {
 func ParseGlobalConfig(homedir string) *GlobalConfig {
 
 	config := GlobalConfig{}
-	file, err := os.Open(*ConfigFile)
+	file, err := os.Open(*ConfigFile) // TODO use default
 	if err != nil {
 		standardLogger.Fatal("Error while opening configuration file:", err)
 	}
