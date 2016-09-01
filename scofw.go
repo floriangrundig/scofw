@@ -116,9 +116,9 @@ func launchScoForProject(projectDefinition *config.ProjectConfig, logfile io.Wri
 	// listen
 	publisher := publisher.New(config, gitConfig, util, fileChangedMessageChannel)
 
-	publisher.Start()
+	wktreeObserver.UpdateCurrentScoSession()
 
-	wktreeObserver.Start()
+	publisher.Start()
 
 	gitReporter.Start()
 

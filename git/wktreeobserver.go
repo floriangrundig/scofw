@@ -42,10 +42,9 @@ func New(config *config.Config, gitConfig *gitconfig.Config) *WorkTreeObserver {
 	}
 }
 
-func (observer *WorkTreeObserver) Start() {
-	observer.UpdateCurrentScoSession()
-}
-
+// UpdateCurrentScoSession detects the current git work tree.
+// If that has changed it creates a new unique sco session
+// and stores it in the config
 func (observer *WorkTreeObserver) UpdateCurrentScoSession() {
 
 	// TODO it would be nice if we detect a new ref automatically
