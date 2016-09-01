@@ -27,12 +27,11 @@ func GetVerboseLoggingFlag() bool {
 	return *Verbose
 }
 
-func New(projectDefinition *ProjectConfig, logger *log_.Logger) *Config {
+func New(globalConfig *GlobalConfig, projectDefinition *ProjectConfig, logger *log_.Logger) *Config {
 	log = logger
 
 	mandatoryIgnorePatterns := []string{".sco", ".git", "*___jb_*"}
-	ignorePatterns := append(mandatoryIgnorePatterns, getIgnorePatterns(projectDefinition.IgnoreFiles)...)
-
+	ignorePatterns := append(mandatoryIgnorePatterns, getIgnorePatterns(globalConfig, projectDefinition.IgnoreFiles)...)
 	log.Println("Using following ignore patterns: ", ignorePatterns)
 
 	ignoreObject, error := gitignore.CompileIgnoreLines(ignorePatterns...)
@@ -54,7 +53,7 @@ func New(projectDefinition *ProjectConfig, logger *log_.Logger) *Config {
 	return &config
 }
 
-func getIgnorePatterns(ignoreFiles []string) []string {
+func getIgnorePatterns(globalConfig *GlobalConfig, ignoreFiles []string) []string {
 	ignoreLines := make([]string, 0, 4)
 
 	for _, ignoreFile := range ignoreFiles {
@@ -74,6 +73,10 @@ func getIgnorePatterns(ignoreFiles []string) []string {
 		if err := scanner.Err(); err != nil {
 			log.Fatal(err)
 		}
+	}
+
+	for _, ignorePattern := range globalConfig.IgnorePatterns {
+		ignoreLines = append(ignoreLines, ignorePattern)
 	}
 
 	return ignoreLines

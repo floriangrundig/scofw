@@ -78,19 +78,19 @@ func main() {
 		}
 		defer file.Close()
 
-		launchScoForProject(&projectDefinition, file, home)
+		launchScoForProject(globalConfig, &projectDefinition, file, home)
 		log.Println("Done...")
 	}
 
 	<-done
 }
 
-func launchScoForProject(projectDefinition *config.ProjectConfig, logfile io.Writer, home string) *config.Config {
+func launchScoForProject(globalConfig *config.GlobalConfig, projectDefinition *config.ProjectConfig, logfile io.Writer, home string) *config.Config {
 
 	logger := createLogger(logfile, config.GetVerboseLoggingFlag())
 
 	// stores global configuration
-	config := config.New(projectDefinition, logger)
+	config := config.New(globalConfig, projectDefinition, logger)
 
 	// utility module for creating sco related files/directories
 	util := util.New(config)

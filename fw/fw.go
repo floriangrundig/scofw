@@ -63,12 +63,16 @@ func (fw *FileWatcher) Start() {
 		walkFunc := func(path string, info os.FileInfo, err error) error {
 
 			if err == nil {
-				if info.IsDir() && !fw.config.GitIgnore.MatchesPath(fw.toProjectRelativePath(path)) {
-					log.Println("Checking path", path, fw.toProjectRelativePath(path))
-					log.Println("Watching", path)
-					err = watcher.Add(path)
-					if err != nil {
-						log.Fatal(err)
+				if info.IsDir() {
+					if !fw.config.GitIgnore.MatchesPath(fw.toProjectRelativePath(path)) {
+						log.Println("Checking path", path, fw.toProjectRelativePath(path))
+						log.Println("Watching", path)
+						err = watcher.Add(path)
+						if err != nil {
+							log.Fatal(err)
+						}
+					} else {
+						return filepath.SkipDir
 					}
 				}
 			} else {
