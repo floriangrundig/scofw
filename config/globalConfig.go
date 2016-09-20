@@ -18,10 +18,10 @@ type GlobalConfig struct {
 	IgnorePatterns []string        `json:"ignorePatterns"`
 }
 
-func ParseGlobalConfig(homedir string) *GlobalConfig {
+func ParseGlobalConfig(configFile string) *GlobalConfig {
 
 	config := GlobalConfig{}
-	file, err := os.Open(*ConfigFile) // TODO use default
+	file, err := os.Open(configFile) // TODO use default
 	if err != nil {
 		standardLogger.Fatal("Error while opening configuration file:", err)
 	}

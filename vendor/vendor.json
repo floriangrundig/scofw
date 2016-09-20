@@ -27,6 +27,12 @@
 			"revisionTime": "2016-04-12T13:37:56Z"
 		},
 		{
+			"checksumSHA1": "klfNfdEPsrWYLps2qBkLgfJsNYI=",
+			"path": "github.com/gorilla/websocket",
+			"revision": "2d1e4548da234d9cb742cc3628556fef86aafbac",
+			"revisionTime": "2016-09-12T15:30:41Z"
+		},
+		{
 			"checksumSHA1": "AXacfEchaUqT5RGmPmMXsOWRhv8=",
 			"path": "github.com/mitchellh/go-homedir",
 			"revision": "756f7b183b7ab78acdbbee5c7f392838ed459dda",

@@ -1,0 +1,25 @@
+/* Main CSS */
+
+
+
+*
+{
+    box-sizing: border-box;
+}
+
+html
+{
+    height: 100%;
+}
+
+body
+{
+    font-family: $font;
+
+    margin: 0;
+
+    background-color: $main-background;
+
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}

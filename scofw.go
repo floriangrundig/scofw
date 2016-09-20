@@ -12,6 +12,7 @@ import (
 	gitconfig "github.com/floriangrundig/scofw/git/config"
 	"github.com/floriangrundig/scofw/publisher"
 	"github.com/floriangrundig/scofw/reporter"
+	"github.com/floriangrundig/scofw/server"
 	"github.com/floriangrundig/scofw/util"
 	"github.com/mitchellh/go-homedir"
 )
@@ -49,7 +50,7 @@ func main() {
 
 	*/
 
-	globalConfig := config.ParseGlobalConfig(home)
+	globalConfig := config.ParseGlobalConfig(*config.ConfigFile)
 
 	done := make(chan bool)
 
@@ -81,6 +82,9 @@ func main() {
 		launchScoForProject(globalConfig, &projectDefinition, file, home)
 		log.Println("Done...")
 	}
+
+	server := server.New(5000)
+	server.Start()
 
 	<-done
 }

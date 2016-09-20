@@ -215,19 +215,7 @@ func joinFilePaths(p1, p2 string) string {
 	return filepath.Join(p1, p2)
 }
 
-// TODO this function should go into its own package because its the only function which is really tied to git
-// TODO function too long
-func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
-	log.Println("This is the first change detected for", event.Name)
-
-	baseFolder := filepath.Join("diffs", gr.gitConfig.CurrentScoSession, filepath.Dir(event.Name))
-	baseFile := filepath.Join(baseFolder, filepath.Base(event.Name))
-	gr.util.CreateScoFolder(baseFolder)
-
-	var contentA []byte
-	var contentB []byte
-	emptyContent := []byte("")
-
+func (gr *GitReporter) getHeadCommitTree() *git.Tree {
 	// TODO: I assume you can only work on Head or do we need a more sophisticated way of determing what I'm working on
 	ref, err := gr.repo.Head()
 	verifyNoError(err)
@@ -239,7 +227,10 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 
 	commitTree, err := commit.Tree()
 	verifyNoError(err)
+	return commitTree
+}
 
+func (gr *GitReporter) getGitDiffOptions() *git.DiffOptions {
 	options, err := git.DefaultDiffOptions()
 	verifyNoError(err)
 
@@ -247,14 +238,28 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 	options.IdAbbrev = 40
 	options.Flags |= git.DiffIncludeUntracked
 	options.Flags |= git.DiffShowUntrackedContent
+	return &options
+}
 
-	gitDiff, err := gr.repo.DiffTreeToWorkdir(commitTree, &options)
+// TODO this function should go into its own package because its the only function which is really tied to git
+// TODO function too long
+func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
+	log.Println("This is the first change detected for", event.Name)
+
+	baseFolder := filepath.Join("diffs", gr.gitConfig.CurrentScoSession, filepath.Dir(event.Name))
+	baseFile := filepath.Join(baseFolder, filepath.Base(event.Name))
+	gr.util.CreateScoFolder(baseFolder) // mirror directories of our file into our internal diffs directory
+
+	var contentA, contentB []byte
+	var contentDeltaDetermined bool
+	emptyContent := []byte("")
+
+	commitTree := gr.getHeadCommitTree()
+	gitDiff, err := gr.repo.DiffTreeToWorkdir(commitTree, gr.getGitDiffOptions())
 	verifyNoError(err)
 
 	numDeltas, err := gitDiff.NumDeltas()
 	verifyNoError(err)
-
-	var contentDeltaDetermined bool
 
 	// find the delta for our changed file
 	for d := 0; d < numDeltas; d++ {
@@ -262,7 +267,7 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 		delta, err := gitDiff.GetDelta(d)
 		verifyNoError(err)
 
-		// we only need to look at our file
+		// we've found the correct delta
 		if strings.HasSuffix(event.Name, delta.NewFile.Path) {
 
 			gr.logStatusDiffDelta(&delta)
@@ -317,14 +322,16 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 		}
 	}
 
-	// TODO if event.Name referes to a new file -> the patch contains "new file mode 100644" -> we should change the file mode to the original settings
+	gr.createAndReportPatch(event, baseFile, &contentA, &contentB)
+}
+
+func (gr *GitReporter) createAndReportPatch(event *fw.FileEvent, baseFile string, contentA, contentB *[]byte) {
 	oldPath := gr.toProjectRelativePath(event.Name)
 	newPath := gr.toProjectRelativePath(event.Name)
-	patch, err := gr.repo.PatchFromBuffers(oldPath, newPath, contentA, contentB, &options)
+	patch, err := gr.repo.PatchFromBuffers(oldPath, newPath, *contentA, *contentB, gr.getGitDiffOptions())
 	defer patch.Free()
 	verifyNoError(err)
 	patchString, err := patch.String()
-	_, err = patch.String()
 	verifyNoError(err)
 
 	// send to publisher
@@ -336,7 +343,7 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 	// we store contentB as a snapshot of that file -> all further diffs will be made between workspace file and snapshot
 
 	if event.Op&fw.Remove != fw.Remove {
-		gr.util.WriteFile(&contentB, baseFile)
+		gr.util.WriteFile(contentB, baseFile)
 	} else {
 		gr.util.RemoveFile(baseFile)
 	}
@@ -345,7 +352,7 @@ func (gr *GitReporter) handleFirstChange(event *fw.FileEvent) {
 }
 
 func (gr *GitReporter) toProjectRelativePath(path string) string {
-	// TODO add teh
+	// TODO use
 	relativePath, err := filepath.Rel(gr.config.ProjectDir, path)
 	if err != nil {
 		log.Println("Error while transforming project directory into relative directory:", err)
@@ -380,11 +387,6 @@ func (gr *GitReporter) storeLastChange(event *fw.FileEvent) {
 func (gr *GitReporter) getOriginalBlob(commitTree *git.Tree, event *fw.FileEvent) *git.Blob {
 	path := gr.toProjectRelativePath(event.Name) // event.Name is an absolute path
 
-	// under linux files in the root directory are reported as ./filename which is an invalid git tree path -> we have to remove the "./"
-	// if filepath.Dir(path) == "." {
-	// path = filepath.Base(path)
-	// }
-
 	log.Println("Looking in commit tree for ", path)
 	treeEntry, err := commitTree.EntryByPath(path)
 	if err != nil {
@@ -402,19 +404,12 @@ func (gr *GitReporter) getOriginalBlob(commitTree *git.Tree, event *fw.FileEvent
 func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange gitconfig.FileModificationInfo) {
 	log.Println("This is a change detected for", event.Name)
 
-	options, err := git.DefaultDiffOptions()
-
-	verifyNoError(err)
-
-	// Specifying full patch indices. TODO what is needed here?
-	options.IdAbbrev = 40
-	options.Flags |= git.DiffIncludeUntracked
-
 	baseFolder := filepath.Join("diffs", joinFilePaths(gr.gitConfig.CurrentScoSession, filepath.Dir(event.Name)))
 	baseFile := filepath.Join(baseFolder, filepath.Base(event.Name))
 
 	var contentA *[]byte
 	var contentB []byte
+	var err error
 	emptyContent := []byte("")
 
 	if lastChange.Op&uint32(fw.Remove) != uint32(fw.Remove) { // TODO: how to handle renamed files? (Beware -> IntelliJ stores the changes in a tmp file and renames that tmp file to the current file)
@@ -439,30 +434,7 @@ func (gr *GitReporter) handleChange(event *fw.FileEvent, lastChange gitconfig.Fi
 		contentB = emptyContent // TODO is this really identical to delete?
 	}
 
-	// TODO if event.Name referes to a new file -> the patch contains "new file mode 100644" -> we should change the file mode to the original settings
-	oldPath := gr.toProjectRelativePath(event.Name)
-	newPath := gr.toProjectRelativePath(event.Name)
-	patch, err := gr.repo.PatchFromBuffers(oldPath, newPath, *contentA, contentB, &options)
-	defer patch.Free()
-	verifyNoError(err)
-	patchString, err := patch.String()
-	_, err = patch.String()
-	verifyNoError(err)
-
-	// publish event
-	gr.fileChangedMessageChannel <- &publisher.Message{
-		FileEvent: event,
-		Patch:     &patchString,
-	}
-
-	// we store contentB as a snapshot of that file -> all further diffs will be made between workspace file and snapshot
-	if event.Op&fw.Remove != fw.Remove {
-		gr.util.WriteFile(&contentB, baseFile)
-	} else {
-		gr.util.RemoveFile(baseFile)
-	}
-
-	gr.storeLastChange(event)
+	gr.createAndReportPatch(event, baseFile, contentA, &contentB)
 }
 
 func (gr *GitReporter) logStatusDiffDelta(delta *git.DiffDelta) {
