@@ -1,6 +1,7 @@
 package publisher
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	log_ "log"
@@ -23,14 +24,21 @@ type Message struct {
 	Patch     *string
 }
 
+type ServerMessage struct {
+	FileChanges       *string
+	CurrentScoSession *string
+	ProjectName       *string
+}
+
 type Publisher struct {
 	config                    *config.Config
 	gitConfig                 *gitconfig.Config
 	util                      *util.Util
-	fileChangedMessageChannel chan *Message
+	fileChangedMessageChannel <-chan *Message
+	serverChannel             chan<- *ServerMessage
 }
 
-func New(config *config.Config, gitConfig *gitconfig.Config, util *util.Util, fileChangedMessageChannel chan *Message) *Publisher {
+func New(config *config.Config, gitConfig *gitconfig.Config, util *util.Util, fileChangedMessageChannel <-chan *Message, serverChannel chan<- *ServerMessage) *Publisher {
 	log = config.Logger
 	log.Println("Creating Publisher...")
 
@@ -41,6 +49,7 @@ func New(config *config.Config, gitConfig *gitconfig.Config, util *util.Util, fi
 		gitConfig: gitConfig,
 		util:      util,
 		fileChangedMessageChannel: fileChangedMessageChannel,
+		serverChannel:             serverChannel,
 	}
 }
 
@@ -51,17 +60,35 @@ func (publisher *Publisher) Start() {
 			msg, ok := <-publisher.fileChangedMessageChannel
 
 			if !ok {
-				log.Println("Shutting down publisher")
+				log.Println("Shutting Down Publisher")
 				break
 			}
 
 			if *msg.Patch != "" {
+				publisher.publishToServer(msg)
 				publisher.log(msg)
-
 				publisher.logInGourceFormat(msg)
 			}
 		}
 	}()
+}
+
+func (publisher *Publisher) publishToServer(msg *Message) {
+
+	var buf bytes.Buffer
+	logger := log_.New(&buf, "", log_.Ldate|log_.Ltime)
+	logger.Println(*msg.Patch)
+
+	fileChanges := fmt.Sprint(&buf)
+
+	transformedMsg := &ServerMessage{
+		FileChanges:       &fileChanges,
+		CurrentScoSession: &publisher.gitConfig.CurrentScoSession,
+		ProjectName:       &publisher.config.ProjectName,
+	}
+	fmt.Println(fileChanges)
+
+	publisher.serverChannel <- transformedMsg
 }
 
 func (publisher *Publisher) log(msg *Message) {
@@ -80,6 +107,7 @@ func (publisher *Publisher) log(msg *Message) {
 	if publisher.config.VerboseOutput {
 		writer = io.MultiWriter(file, os.Stdout)
 	} else {
+
 		writer = io.Writer(file)
 	}
 

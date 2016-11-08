@@ -1,52 +1,30 @@
 module Main exposing (..)
 
-import Html exposing (Html, div, text)
-import Html.App
+import Navigation
+import Models exposing (Model, initialModel)
+import View exposing (view)
+import Update exposing (update)
+import Messages exposing (Msg(..))
+import Routing exposing (Route)
+import WebSocket
 
 
--- MODEL
+init : Result String Route -> ( Model, Cmd Msg )
+init result =
+    let
+        currentRoute =
+            Routing.routeFromResult result
+    in
+        ( initialModel currentRoute, Cmd.none )
 
 
-type alias Model =
-    String
-
-
-init : ( Model, Cmd Msg )
-init =
-    ( "Hello World 2", Cmd.none )
-
-
-
--- MESSAGES
-
-
-type Msg
-    = NoOp
-
-
-
--- VIEW
-
-
-view : Model -> Html Msg
-view model =
-    div []
-        [ text "FOO"
-        , div
-            []
-            [ text model ]
-        ]
-
-
-
--- UPDATE
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        NoOp ->
-            ( model, Cmd.none )
+urlUpdate : Result String Route -> Model -> ( Model, Cmd Msg )
+urlUpdate result model =
+    let
+        currentRoute =
+            Routing.routeFromResult result
+    in
+        ( { model | route = currentRoute }, Cmd.none )
 
 
 
@@ -55,7 +33,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    WebSocket.listen "ws://localhost:5000/ws" WsUpdate 
 
 
 
@@ -64,9 +42,10 @@ subscriptions model =
 
 main : Program Never
 main =
-    Html.App.program
+    Navigation.program Routing.parser
         { init = init
         , view = view
+        , urlUpdate = urlUpdate
         , update = update
         , subscriptions = subscriptions
         }

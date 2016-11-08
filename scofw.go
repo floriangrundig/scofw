@@ -54,7 +54,8 @@ func main() {
 
 	done := make(chan bool)
 
-	for _, projectDefinition := range globalConfig.Projects {
+	channels := make([]chan *publisher.ServerMessage, len(globalConfig.Projects))
+	for idx, projectDefinition := range globalConfig.Projects {
 		// set default scoDir if not set in global config
 		if projectDefinition.ScoDir == "" {
 			projectDefinition.ScoDir = filepath.Join(home, ".sco", filepath.Base(projectDefinition.Path))
@@ -79,17 +80,18 @@ func main() {
 		}
 		defer file.Close()
 
-		launchScoForProject(globalConfig, &projectDefinition, file, home)
+		channels[idx] = make(chan *publisher.ServerMessage) // we have actually to create the channel
+		launchScoForProject(globalConfig, &projectDefinition, channels[idx], file, home)
 		log.Println("Done...")
 	}
 
-	server := server.New(5000)
+	server := server.New(5000, channels)
 	server.Start()
 
 	<-done
 }
 
-func launchScoForProject(globalConfig *config.GlobalConfig, projectDefinition *config.ProjectConfig, logfile io.Writer, home string) *config.Config {
+func launchScoForProject(globalConfig *config.GlobalConfig, projectDefinition *config.ProjectConfig, serverChannel chan *publisher.ServerMessage, logfile io.Writer, home string) *config.Config {
 
 	logger := createLogger(logfile, config.GetVerboseLoggingFlag())
 
@@ -118,7 +120,7 @@ func launchScoForProject(globalConfig *config.GlobalConfig, projectDefinition *c
 	gitReporter := gitReporter.New(config, gitConfig, util, wktreeObserver, fileEventChannel, fileChangedMessageChannel, home)
 
 	// listen
-	publisher := publisher.New(config, gitConfig, util, fileChangedMessageChannel)
+	publisher := publisher.New(config, gitConfig, util, fileChangedMessageChannel, serverChannel)
 
 	wktreeObserver.UpdateCurrentScoSession()
 

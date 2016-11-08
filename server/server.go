@@ -1,11 +1,12 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
+	"github.com/floriangrundig/scofw/publisher"
 	"github.com/floriangrundig/scofw/ws"
 	"github.com/gorilla/websocket"
 )
@@ -21,13 +22,15 @@ var (
 )
 
 type Server struct {
-	Port int
-	Hub  *ws.Hub
+	Port                       int
+	Hub                        *ws.Hub
+	FileEventReportingChannels []chan *publisher.ServerMessage
 }
 
-func New(port int) *Server {
+func New(port int, channels []chan *publisher.ServerMessage) *Server {
 	return &Server{
 		Port: port,
+		FileEventReportingChannels: channels,
 	}
 }
 
@@ -49,19 +52,30 @@ func (server *Server) serveWs(w http.ResponseWriter, r *http.Request) {
 	client.ReadPump()
 }
 
-func (server *Server) createDummyData() {
-	ticker := time.NewTicker(1 * time.Second)
-	counter := 0
-	for {
+func (server *Server) pushFileChanges() {
+	for _, channel := range server.FileEventReportingChannels {
+		go func() {
+			for {
+				// wait for incoming messages
+				msg, ok := <-channel
 
-		select {
-		case <-ticker.C:
-			server.Hub.Broadcast <- []byte(fmt.Sprintf("Counter: %d", counter))
-			counter++
-			counter = counter % 60
-		}
+				if !ok {
+					log.Println("Shutting down server channel")
+					break
+				}
+
+				jMsg, err := json.Marshal(&msg)
+
+				if err == nil {
+					if *msg.FileChanges != "" {
+						server.Hub.Broadcast <- jMsg
+					}
+				} else {
+					log.Println("Error while marshalling event message:", msg)
+				}
+			}
+		}()
 	}
-	// TODO produce some messages and send over hub broadcast channel
 }
 
 func (server *Server) Start() {
@@ -78,6 +92,6 @@ func (server *Server) Start() {
 	addr := fmt.Sprintf(":%d", server.Port)
 
 	log.Printf("Starting server at %s", addr)
-	go server.createDummyData()
+	go server.pushFileChanges()
 	http.ListenAndServe(addr, nil)
 }

@@ -56,7 +56,7 @@ if (TARGET_ENV === 'development') {
       inline: true,
       progress: true,
       proxy: {
-        '/api/*': 'http://localhost:8080',
+        '/api/*': 'http://localhost:5000',
       },
     },
 

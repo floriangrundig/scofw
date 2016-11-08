@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	ProjectDir        string
+	ProjectName       string
 	ScoDir            string
 	ScoConfigFile     string
 	VerboseOutput     bool
@@ -41,6 +42,7 @@ func New(globalConfig *GlobalConfig, projectDefinition *ProjectConfig, logger *l
 	}
 
 	config := Config{
+		ProjectName:       projectDefinition.Name,
 		ProjectDir:        projectDefinition.Path,
 		ScoDir:            projectDefinition.ScoDir,
 		ScoConfigFile:     "sco.json",

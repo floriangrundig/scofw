@@ -1,0 +1,39 @@
+
+
+.liveview__page {
+    display: flex 1 1;
+    flex-direction: row;
+}
+
+.events__container {
+    display: flex 1 1;
+    flex-wrap: nowrap;
+}
+
+.events__summary {
+    margin: 20px;
+    border: 1px solid #000;
+}
+
+.events__listing {
+
+}
+
+
+.container {
+
+}
+
+.events__item {
+    
+}
+
+
+.table-row {
+    display: flex 1 1;
+}
+
+.table-header {
+    background-color: $table-header-background-color;
+    color: $table-header-color;
+}

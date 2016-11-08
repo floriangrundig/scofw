@@ -20,8 +20,8 @@ lint: ## Run linting
 	npm run lint
 
 test: ## Run tests
-	npm run test
-
+	elm-test
+		
 pre-commit: clean-elm check-compile test ## Run before commiting
 	! grep -R "Debug.log" src
 

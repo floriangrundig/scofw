@@ -21,7 +21,7 @@
     "css-loader": "^0.23.1",
     "element-resize-event": "^2.0.3",
     "elm-hot-loader": "^0.3.3",
-    "elm-test": "^0.16.1-alpha4",
+    "elm-test": "0.17.0",
     "elm-webpack-loader": "^3.0.3",
     "elm": "^0.17.0",
     "eslint": "^3.1.1",
@@ -44,6 +44,6 @@
   },
   "devDependencies": {
     "chokidar": "^1.6.0",
-    "elm-test": "^0.16.1-alpha4"
+    "elm-test": "^0.17.0"
   }
 }
