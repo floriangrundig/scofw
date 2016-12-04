@@ -18,12 +18,11 @@ update message model =
                 oldState =
                     case model.state of
                         Initial ->
-                            { serverMessages = [fileChangedEvent]
+                            { serverMessages = [ fileChangedEvent ]
                             }
+
                         ReceivingEvents s ->
-                            {
-                                serverMessages = fileChangedEvent :: s.serverMessages
+                            { serverMessages = fileChangedEvent :: s.serverMessages
                             }
-                
             in
-                ( {model | state = ReceivingEvents oldState}, Cmd.none )
+                ( { model | state = ReceivingEvents oldState }, Cmd.none )

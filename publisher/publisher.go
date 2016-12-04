@@ -92,7 +92,7 @@ func (publisher *Publisher) publishToServer(msg *Message) {
 }
 
 func (publisher *Publisher) log(msg *Message) {
-	// TODO to open a file and creating a logger each call is insufficient -> store loggers per session in a map to reuse them
+	// TODO toopen a file and creating a logger each call is insufficient -> store loggers per session in a map to reuse them
 	filename := fmt.Sprintf("%s.log", publisher.gitConfig.CurrentScoSession)
 
 	file, err := os.OpenFile(filepath.Join(publisher.config.ScoDir, "logs", filename), os.O_CREATE|os.O_WRONLY|os.O_APPEND, publisher.config.ScoDirPermissions)

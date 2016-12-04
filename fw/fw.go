@@ -13,8 +13,7 @@ var (
 	log *log_.Logger
 )
 
-// The types Event and Op and the Op-constants were copied from the fsnotify.go -> we wrap them here
-
+// Types Event and Op and the Op-constants were copied from the fsnotify.go -> we wrap them here
 // FileEvent represents a single file system notification.
 type FileEvent struct {
 	Name string // Relative path to the file or directory.

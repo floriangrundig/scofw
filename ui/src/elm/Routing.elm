@@ -1,8 +1,7 @@
 module Routing exposing (..)
 
-import String
 import Navigation
-import UrlParser exposing (..)
+import UrlParser exposing (Parser, (</>), s, int, string, map, oneOf, parseHash)
 
 
 type Route
@@ -11,31 +10,24 @@ type Route
     | NotFoundRoute
 
 
-matchers : Parser (Route -> a) a
-matchers =
+routes : Parser (Route -> a) a
+routes =
     oneOf
-        [ format RootRoute (s "")
-        , format LiveViewRoute (s "live")
+        [ map RootRoute (s "")
+        , map LiveViewRoute (s "live")
         ]
 
 
-hashParser : Navigation.Location -> Result String Route
-hashParser location =
-    location.hash
-        |> String.dropLeft 1
-        |> parse identity matchers
+parseHash : Navigation.Location -> Route
+parseHash location =
+    case ( location.pathname, location.search, location.hash ) of
+        ( "/", "", "" ) ->
+            RootRoute
+
+        _ ->
+            UrlParser.parseHash routes location |> Maybe.withDefault NotFoundRoute
 
 
-parser : Navigation.Parser (Result String Route)
-parser =
-    Navigation.makeParser hashParser
-
-
-routeFromResult : Result String Route -> Route
-routeFromResult result =
-    case result of
-        Ok route ->
-            route
-
-        Err string ->
-            NotFoundRoute
+parse : Navigation.Location -> Route
+parse location =
+    UrlParser.parsePath routes location |> Maybe.withDefault NotFoundRoute

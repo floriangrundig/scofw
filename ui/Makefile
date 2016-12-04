@@ -11,7 +11,7 @@ check-compile: ## Build Elm to /dev/null to see if it compiles
 	elm-make src/elm/Main.elm --output /dev/null
 
 clean-elm: ## Clear the build artifacts
-	rm -rf elm-stuff/build-artifacts/0.17.1/user/project/1.0.0/
+	rm -rf elm-stuff/build-artifacts/0.18.0/FlorianGrundig
 
 run: ## Run the dev server
 	npm start
@@ -21,7 +21,7 @@ lint: ## Run linting
 
 test: ## Run tests
 	elm-test
-		
+
 pre-commit: clean-elm check-compile test ## Run before commiting
 	! grep -R "Debug.log" src
 

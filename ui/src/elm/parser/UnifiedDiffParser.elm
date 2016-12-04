@@ -116,7 +116,7 @@ parseHunks entry =
             )
             []
             hunkStartIndicies
-            |> List.map (snd >> parseHunk)
+            |> List.map (Tuple.second >> parseHunk)
 
 
 parseHunk : List String -> Result String Hunk
@@ -141,21 +141,21 @@ parseHunk lines =
                         case matches.submatches of
                             [ fromFileLineNumberStart, fromFileLineNumberEnd, toFileLineNumberStart, toFileLineNumberEnd, context ] ->
                                 let
-                                    fromFileLineNumberStart' =
+                                    fromFileLineNumberStart_ =
                                         fromFileLineNumberStart |> Maybe.withDefault "failed" |> String.toInt
 
-                                    toFileLineNumberStart' =
+                                    toFileLineNumberStart_ =
                                         toFileLineNumberStart |> Maybe.withDefault "failed" |> String.toInt
 
-                                    fromFileLineNumberEnd' =
+                                    fromFileLineNumberEnd_ =
                                         if fromFileLineNumberEnd == Just "" then
-                                            fromFileLineNumberStart'
+                                            fromFileLineNumberStart_
                                         else
                                             fromFileLineNumberEnd |> Maybe.withDefault "failed" |> String.toInt
 
-                                    toFileLineNumberEnd' =
+                                    toFileLineNumberEnd_ =
                                         if toFileLineNumberEnd == Just "" then
-                                            toFileLineNumberStart'
+                                            toFileLineNumberStart_
                                         else
                                             toFileLineNumberEnd |> Maybe.withDefault "failed" |> String.toInt
 
@@ -168,10 +168,10 @@ parseHunk lines =
                                                 , toFileLineNumberEnd = toEnd
                                                 }
                                             )
-                                            fromFileLineNumberStart'
-                                            fromFileLineNumberEnd'
-                                            toFileLineNumberStart'
-                                            toFileLineNumberEnd'
+                                            fromFileLineNumberStart_
+                                            fromFileLineNumberEnd_
+                                            toFileLineNumberStart_
+                                            toFileLineNumberEnd_
 
                                     ( additions, deletions, hunkLines ) =
                                         parseHunkBody hunkBody
@@ -231,7 +231,7 @@ range : Int -> Int -> List String -> List String
 range from to items =
     (List.indexedMap (,) items)
         |> List.filter (\( idx, line ) -> idx >= from && idx <= to)
-        |> List.map snd
+        |> List.map Tuple.second
 
 
 parseOldFileName : String -> Result String String
@@ -277,8 +277,8 @@ parseExactlyOneGroup entry errMsg regex =
 
                 x :: [] ->
                     case x of
-                        Just m' ->
-                            Ok m'
+                        Just m_ ->
+                            Ok m_
 
                         Nothing ->
                             Err errMsg

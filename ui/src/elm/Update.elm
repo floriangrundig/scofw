@@ -5,11 +5,15 @@ import Models exposing (Model)
 import LiveView.Messages as LiveViewMessage exposing (Msg(..))
 import LiveView.Update as LiveView exposing (update)
 import ServerMsgDecoder
+import Routing
 
 
 update : Messages.Msg -> Model -> ( Model, Cmd Messages.Msg )
 update msg model =
     case msg of
+        UrlChange location ->
+            { model | route = Routing.parseHash location } ! []
+
         LiveViewMsg subMsg ->
             let
                 ( updatedLiveViewModel, cmd ) =
@@ -37,5 +41,3 @@ update msg model =
                             LiveView.update (LiveViewMessage.FileChanged m) model.liveViewModel
             in
                 ( { model | liveViewModel = updatedLiveViewModel }, Cmd.map LiveViewMsg cmd )
-
-

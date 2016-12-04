@@ -9,22 +9,16 @@ import Routing exposing (Route)
 import WebSocket
 
 
-init : Result String Route -> ( Model, Cmd Msg )
-init result =
+-- INITIALIZATION
+
+
+init : Navigation.Location -> ( Model, Cmd Msg )
+init location =
     let
         currentRoute =
-            Routing.routeFromResult result
+            Routing.parseHash location
     in
         ( initialModel currentRoute, Cmd.none )
-
-
-urlUpdate : Result String Route -> Model -> ( Model, Cmd Msg )
-urlUpdate result model =
-    let
-        currentRoute =
-            Routing.routeFromResult result
-    in
-        ( { model | route = currentRoute }, Cmd.none )
 
 
 
@@ -33,19 +27,18 @@ urlUpdate result model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    WebSocket.listen "ws://localhost:5000/ws" WsUpdate 
+    WebSocket.listen "ws://localhost:5000/ws" WsUpdate
 
 
 
 -- MAIN
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
-    Navigation.program Routing.parser
+    Navigation.program UrlChange
         { init = init
         , view = view
-        , urlUpdate = urlUpdate
         , update = update
         , subscriptions = subscriptions
         }

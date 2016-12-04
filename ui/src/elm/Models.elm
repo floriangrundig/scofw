@@ -12,7 +12,7 @@ type alias Model =
     }
 
 
-initialModel :  Route ->Model
+initialModel : Route -> Model
 initialModel route =
     { sessions = []
     , route = route

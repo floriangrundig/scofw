@@ -5,35 +5,111 @@
     flex-direction: row;
 }
 
-.events__container {
-    display: flex 1 1;
-    flex-wrap: nowrap;
-}
-
 .events__summary {
     margin: 20px;
     border: 1px solid #000;
 }
 
 .events__listing {
+    display: flex;
+    flex: 1 1 auto;
+}
+
+.events__modification-graph {
+    width: 20%;
+}
+
+.events__details {
+    width: 80%;
 
 }
 
 
-.container {
+
+.hunk__details-content {
+	border: 1px solid grey;
+	width: 50%;
 
 }
 
-.events__item {
-    
+
+.code__addition {
+	background-color: lightgreen;
 }
 
+
+.code__deletion {
+	background-color: lightcoral;
+
+}
+
+.code {
+  	font-family: monospace;
+}
+
+.hunk {
+   display: flex;
+   flex: 1 1 auto;
+   flex-direction: column;
+   border: 1px solid black;
+   margin: 10px;
+   padding: 10px;
+}
+
+.hunk__details {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: row;
+	justify-content: stretch;
+
+
+}
+
+.event {
+   display: flex;
+   flex: 1 1 auto;
+   flex-direction: column;
+   border: 1px solid black;
+   margin-bottom: 20px;
+   margin-right: 20px;
+}
+
+
+
+.event__summary {
+	background-color: lightyellow;
+	color: black;
+	border-bottom: 1px solid black;
+	padding: 5px;
+	display: flex;
+	justify-content: space-between;
+
+}
+
+.hunk-summary {
+
+}
+
+.parse-error {
+	background-color: red;
+	color: white;
+}
+
+
+.event__diff {
+	display: flex;
+	flex-direction: column;
+	flex: 0 0 auto;
+
+}
 
 .table-row {
-    display: flex 1 1;
+    display: flex;
+    flex: 1 1 auto;
+    background-color: white;
 }
 
 .table-header {
-    background-color: $table-header-background-color;
-    color: $table-header-color;
+    background-color: lightblue;
+    color: black;
 }

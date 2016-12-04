@@ -2,7 +2,7 @@ module View exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.App
+import Html
 import Messages exposing (Msg(..))
 import Models exposing (Model)
 import LiveView.View as LiveView exposing (view)
@@ -22,7 +22,7 @@ page model =
             rootView
 
         LiveViewRoute ->
-            Html.App.map LiveViewMsg (LiveView.view model.liveViewModel)
+            Html.map LiveViewMsg (LiveView.view model.liveViewModel)
 
         NotFoundRoute ->
             notFoundView
@@ -30,10 +30,11 @@ page model =
 
 rootView : Html msg
 rootView =
-    div [] 
-    [ text "Overview"
-    , a [href "#live"] [text "Live"]
-    ]
+    div []
+        [ text "Overview"
+        , a [ href "#live" ] [ text "Live" ]
+        ]
+
 
 notFoundView : Html msg
 notFoundView =

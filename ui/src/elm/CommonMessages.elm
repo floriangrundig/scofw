@@ -1,4 +1,5 @@
 module CommonMessages exposing (..)
 
 
-type alias Foo = String
+type alias Foo =
+    String
