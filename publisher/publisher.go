@@ -58,7 +58,6 @@ func (publisher *Publisher) Start() {
 		for {
 			// wait for incoming messages
 			msg, ok := <-publisher.fileChangedMessageChannel
-
 			if !ok {
 				log.Println("Shutting Down Publisher")
 				break
@@ -66,7 +65,9 @@ func (publisher *Publisher) Start() {
 
 			if *msg.Patch != "" {
 				publisher.publishToServer(msg)
+				log.Println("publish into log file")
 				publisher.log(msg)
+				log.Println("publish gource file")
 				publisher.logInGourceFormat(msg)
 			}
 		}
@@ -86,9 +87,10 @@ func (publisher *Publisher) publishToServer(msg *Message) {
 		CurrentScoSession: &publisher.gitConfig.CurrentScoSession,
 		ProjectName:       &publisher.config.ProjectName,
 	}
-	fmt.Println(fileChanges)
 
+	log.Print("Publish to server... ")
 	publisher.serverChannel <- transformedMsg
+	log.Println("[DONE]")
 }
 
 func (publisher *Publisher) log(msg *Message) {

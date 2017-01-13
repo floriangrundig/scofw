@@ -1,5 +1,9 @@
 package wktreeobserver
 
+/**
+* The WorkTreeObserver module provides functions to get the current git work tree hash.
+* The git work tree hash is used to store our runtime data (file snapshots, modifications stats, ...)
+ */
 import (
 	"fmt"
 	log_ "log"

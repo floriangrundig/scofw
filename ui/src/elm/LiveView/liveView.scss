@@ -21,18 +21,22 @@
 
 .events__details {
     width: 80%;
-
+    font-size: $default-font-size;
+    
 }
-
 
 
 .hunk__details-content {
 	border: 1px solid grey;
 	width: 50%;
-
+  display: flex;
+  flex-direction: row;
 }
 
+.hunk__details-lineNumbers {
+    margin-right: 10px;
 
+}
 .code__addition {
 	background-color: lightgreen;
 }
@@ -45,6 +49,10 @@
 
 .code {
   	font-family: monospace;
+}
+
+.code__padding {
+    background-color: lightgrey;
 }
 
 .hunk {

@@ -32,7 +32,8 @@ rootView : Html msg
 rootView =
     div []
         [ text "Overview"
-        , a [ href "#live" ] [ text "Live" ]
+        , div []
+            [ a [ href "#live" ] [ text "Live View" ] ]
         ]
 
 

@@ -9,8 +9,7 @@ import Routing exposing (Route)
 import WebSocket
 
 
--- INITIALIZATION
-
+-- INITIALI
 
 init : Navigation.Location -> ( Model, Cmd Msg )
 init location =

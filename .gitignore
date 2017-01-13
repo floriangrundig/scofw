@@ -13,3 +13,8 @@
 node_modules
 elm-stuff
 dist
+
+ui/elm.js
+
+
+.sco*

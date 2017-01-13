@@ -80,7 +80,7 @@ func main() {
 		}
 		defer file.Close()
 
-		channels[idx] = make(chan *publisher.ServerMessage) // we have actually to create the channel
+		channels[idx] = make(chan *publisher.ServerMessage) // we have to create the channel
 		launchScoForProject(globalConfig, &projectDefinition, channels[idx], file, home)
 		log.Println("Done...")
 	}

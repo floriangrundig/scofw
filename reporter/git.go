@@ -333,6 +333,7 @@ func (gr *GitReporter) createAndReportPatch(event *fw.FileEvent, baseFile string
 	verifyNoError(err)
 	patchString, err := patch.String()
 	verifyNoError(err)
+	log.Printf("Created patch for file: %s", event.Name)
 
 	// send to publisher
 	gr.fileChangedMessageChannel <- &publisher.Message{

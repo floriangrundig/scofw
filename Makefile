@@ -3,6 +3,12 @@ CURRENT_DIRECTORY="$(shell pwd)"
 run:
 	go run scofw.go -c ".sco.config.example.json" -v
 
+run-humio:
+	go run scofw.go -c ".sco.config.humio.json" -v
+
+run-global:
+	go run scofw.go -c "/Users/flg/.sco.config" -v
+
 linux-bash:
 	docker run -it --rm -v $(CURRENT_DIRECTORY):/usr/src/myapp -w /usr/src/myapp scofw-golang:1.6 bash
 

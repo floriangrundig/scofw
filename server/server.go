@@ -56,9 +56,10 @@ func (server *Server) pushFileChanges() {
 	for _, channel := range server.FileEventReportingChannels {
 		go func() {
 			for {
-				// wait for incoming messages
+				// wait for incoming file changes
+				log.Println("Server listening on file change channel")
 				msg, ok := <-channel
-
+				log.Println("Server received file change...")
 				if !ok {
 					log.Println("Shutting down server channel")
 					break
@@ -68,7 +69,9 @@ func (server *Server) pushFileChanges() {
 
 				if err == nil {
 					if *msg.FileChanges != "" {
+						log.Print("Broadcast to ws clients... ")
 						server.Hub.Broadcast <- jMsg
+						log.Println("[Done]")
 					}
 				} else {
 					log.Println("Error while marshalling event message:", msg)
@@ -92,6 +95,6 @@ func (server *Server) Start() {
 	addr := fmt.Sprintf(":%d", server.Port)
 
 	log.Printf("Starting server at %s", addr)
-	go server.pushFileChanges()
+	server.pushFileChanges()
 	http.ListenAndServe(addr, nil)
 }
